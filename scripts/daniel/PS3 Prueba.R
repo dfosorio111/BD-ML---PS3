@@ -170,3 +170,14 @@ house_Bog$dist_bus <- min_dist_bus
 #Gráficos de las casas de medellín
 housesMedallo <- train_sf %>% subset(city=="Medellín")
 leaflet() %>% addTiles() %>% addCircles(data=housesMedallo)
+
+#Paso siguiente para que queden
+Med <- getbb(place_name = "Medellín Colombia", 
+             featuretype = "boundary:administrative", 
+             format_out = "sf_polygon") %>% .$multipolygon
+
+leaflet() %>% addTiles() %>% addPolygons(data=Med)
+
+house_Bog <- st_intersection(x = housesBogota , y = Bog)
+
+leaflet() %>% addTiles() %>% addPolygons(data=Bog,col="red") %>% addCircles(data=house_Bog)
