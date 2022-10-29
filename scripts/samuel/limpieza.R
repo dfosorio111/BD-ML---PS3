@@ -43,7 +43,6 @@ x5 <- "[:digit:]+[:space:]+"
 x6 <- "[:digit:]+[:punct:]+[:digit:]+[:space:]+"
 x7 <- "[:digit:]+"
 x8 <- "[:digit:]+[:punct:]+[:digit:]+"
-
 x9 <- "+[:space:]+[:digit:]+[:space:]"
 x10 <- "+[:space:]+[:digit:]+[:punct:]+[:digit:]+[:space:]"
 x11 <- "+[:space:]+[:digit:]"
@@ -52,6 +51,7 @@ x13 <- "+[:digit:]+[:space:]"
 x14 <- "+[:digit:]+[:punct:]+[:digit:]+[:space:]"
 x15 <- "+[:digit:]"
 x16 <- "+[:digit:]+[:punct:]+[:digit:]"
+
 
 for (i in c("mts","m2","mt2","mts2","metros","cuadrad","mtro","mtr2", "M2", "mtrs",
             "MTR", "MTRS", "metrs", "meters","AREA","area", "área", "ÁREA","espacio de",
