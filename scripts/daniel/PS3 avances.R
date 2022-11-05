@@ -301,6 +301,8 @@ names(house)
 names(Censo)
 
 house_def <- left_join(house, db,by=c("COD_DANE"="COD_DANE_ANM"))
+#Probando Bogotá
+house_def <- house_def%>%subset(city == "Bogotá D.C")
 
 sapply(house_def%>%subset(city == "Bogotá D.C"), function(y) sum(length(which(is.na(y)))))
 
