@@ -237,10 +237,13 @@ train_sf <- readRDS("conBañosyMetros.rds")
 setwd("C:/Users/danie/OneDrive/Escritorio/Uniandes/PEG/Big Data and Machine Learning")
 mnz <- st_read("MGN_URB_MANZANA.shp") #%>%dplyr::select(MANZ_CCNCT)
 mnz2 <- mnz%>%subset(COD_MPIO == "05001" | COD_MPIO == "11001")
+#Manzanas de Bogotá
 mnz_bog <- mnz%>%subset(COD_MPIO == "11001")
+#Manzanas de Medellín
+mnz_med <- mnz%>%subset(COD_MPIO == "05001")
 
-
-#Cargar censo
+#############################################Bogotá
+#Cargar censo Bogotá
 setwd("C:/Users/danie/OneDrive/Escritorio/Uniandes/PEG/Big Data and Machine Learning/BD-ML---PS3/data/Censo")
 ## unzip file
 unzip(zipfile="11Bogota/11_BOGOTA_CSV.zip", overwrite=T) 
@@ -323,11 +326,10 @@ house_def$mod_VA1_ESTRATO2 <- NA
 house_def$mod_V_MAT_PARED2 <- NA
 house_def$mod_V_MAT_PISO2 <- NA
 house_def$mod_VE_RECBAS2 <- NA
-
 for (i in 1:nrow(house_def)) {
   house_def$mean_H_NRO_CUARTOS2[i] <- mean(house_def$mean_H_NRO_CUARTOS[house_nb[[i]]],na.rm=TRUE)
   house_def$med_H_NRO_CUARTOS2[i] <- mean(house_def$med_H_NRO_CUARTOS[house_nb[[i]]],na.rm=TRUE)
-  house_def$sum_HA_TOT_PER2[i] <- mean(house_def$sum_HA_TOT_PER2[house_nb[[i]]],na.rm=TRUE)
+  house_def$sum_HA_TOT_PER2[i] <- mean(house_def$sum_HA_TOT_PER[house_nb[[i]]],na.rm=TRUE)
   house_def$med_V_TOT_HOG2[i] <- mean(house_def$med_V_TOT_HOG[house_nb[[i]]],na.rm=TRUE)
   house_def$mod_VA1_ESTRATO2[i] <- moda(house_def$mod_VA1_ESTRATO[house_nb[[i]]])
   house_def$mod_V_MAT_PARED2[i] <- moda(house_def$mod_V_MAT_PARED[house_nb[[i]]])
@@ -335,6 +337,141 @@ for (i in 1:nrow(house_def)) {
   house_def$mod_VE_RECBAS2[i] <- moda(house_def$mod_VE_RECBAS[house_nb[[i]]])
 }
 
+#Revisar NA
+sapply(house_def, function(y) sum(length(which(is.na(y)))))
+
+#Nombres de la base
+names(house_def)
+
+lista_definitivas <- c("property_id","city", "price", "surface_total", "surface_covered", "bedrooms",
+                       "title", "description", "property_type", "operation_type", "Final_Bathrooms", 
+                       "Final_Metros", "geometry", "COD_DANE", "mean_H_NRO_CUARTOS2", "med_H_NRO_CUARTOS2",
+                       "sum_HA_TOT_PER2", "med_V_TOT_HOG2", "mod_VA1_ESTRATO2", "mod_V_MAT_PARED2",
+                       "mod_V_MAT_PISO2", "mod_VE_RECBAS2")
+
+#Guardar la base definitiva
+houses_bogota <- house_def[,(names(house_def) %in% lista_definitivas)]
+
+write_rds(houses_bogota,"BaseBogotá.rds")
+
+
+##################################Medellín
+#Cargar censo Bogotá
+setwd("C:/Users/danie/OneDrive/Escritorio/Uniandes/PEG/Big Data and Machine Learning/BD-ML---PS3/data/Censo")
+## unzip file
+unzip(zipfile="05Medellín/05_Medellín_CSV.zip", overwrite=T) 
+## data manzanas
+mgn_med <- import("05Medellín/CNPV2018_MGN_A2_05.CSV")
+#Selección de variables
+mgn_med <- mgn_med %>% dplyr::select(COD_DANE_ANM,UA_CLASE,COD_ENCUESTAS,U_VIVIENDA)
+## data hogar
+hog_med <- import("05Medellín/CNPV2018_2HOG_A2_05.CSV")
+hog_med <- hog_med %>% dplyr::select(UA_CLASE,COD_ENCUESTAS,U_VIVIENDA,H_NROHOG,H_NRO_CUARTOS,HA_TOT_PER)
+## data vivienda
+viv_med <- import("05Medellín/CNPV2018_1VIV_A2_05.CSV") 
+viv_med <- viv_med %>% dplyr::select(COD_ENCUESTAS,UA_CLASE,U_VIVIENDA,V_TOT_HOG,VA1_ESTRATO, V_MAT_PARED, V_MAT_PISO, VE_RECBAS)
+## join hogar-vivienda
+viv_hog_med <- left_join(hog_med,viv_med,by=c("COD_ENCUESTAS","U_VIVIENDA","UA_CLASE"))
+## joing mnz-hogar-vivienda
+viv_hog_mgn_med <- left_join(viv_hog_med,mgn_med,by=c("UA_CLASE","COD_ENCUESTAS","U_VIVIENDA"))
+
+
+#Exportamos los datos 
+export(viv_hog_mgn_med,"Censo_Medellín.rds")
+
+viv_hog_mgn_med$H_NRO_CUARTOS[which(viv_hog_mgn_med$H_NRO_CUARTOS == 99)] <- NA
+##=== collapse data ===##
+db <- viv_hog_mgn_med %>%
+  group_by(COD_DANE_ANM) %>% 
+  summarise(mean_H_NRO_CUARTOS=mean(H_NRO_CUARTOS,na.rm=T),
+            med_H_NRO_CUARTOS=median(H_NRO_CUARTOS,na.rm=T),
+            sum_HA_TOT_PER=sum(HA_TOT_PER,na.rm=T), 
+            med_V_TOT_HOG=median(V_TOT_HOG,na.rm=T),
+            mod_VA1_ESTRATO=moda(VA1_ESTRATO),
+            mod_V_MAT_PARED=moda(V_MAT_PARED),
+            mod_V_MAT_PISO=moda(V_MAT_PISO),
+            mod_VE_RECBAS=moda(VE_RECBAS)
+  )
+
+
+#Unir Censo con Manzanas para Bogotá
+
+
+#Se cambia el crs de las manzanas para que se pueda hacer el pegue
+mnz_med <- st_transform(mnz_med, 4326)
+mnz_med <- mnz_med%>%select(COD_DANE)
+house_med <- st_join(x=train_sf , y=mnz_med)
+
+#names(house)
+#names(Censo)
+
+house_def_med <- left_join(house_med, db,by=c("COD_DANE"="COD_DANE_ANM"))
+#Probando Bogotá
+house_def_med <- house_def_med%>%subset(city == "Medellín")
+
+sapply(house_def%>%subset(city == "Medellín"), function(y) sum(length(which(is.na(y)))))
+
+
+#Vecinos cercanos
+house_sp_med <- house_def_med%>%subset(city == "Medellín") %>% st_buffer(200) %>% as_Spatial() # poligonos
+
+## obtener vecinos
+house_nb_med <- poly2nb(pl=house_sp_med , queen=T) # opcion reina
+
+#Crear variables
+house_def_med$mean_H_NRO_CUARTOS2 <- NA
+house_def_med$med_H_NRO_CUARTOS2 <- NA
+house_def_med$sum_HA_TOT_PER2 <- NA
+house_def_med$med_V_TOT_HOG2 <- NA
+house_def_med$mod_VA1_ESTRATO2 <- NA
+house_def_med$mod_V_MAT_PARED2 <- NA
+house_def_med$mod_V_MAT_PISO2 <- NA
+house_def_med$mod_VE_RECBAS2 <- NA
+for (i in 1:nrow(house_def_med)) {
+  house_def_med$mean_H_NRO_CUARTOS2[i] <- mean(house_def_med$mean_H_NRO_CUARTOS[house_nb_med[[i]]],na.rm=TRUE)
+  house_def_med$med_H_NRO_CUARTOS2[i] <- mean(house_def_med$med_H_NRO_CUARTOS[house_nb_med[[i]]],na.rm=TRUE)
+  house_def_med$sum_HA_TOT_PER2[i] <- mean(house_def_med$sum_HA_TOT_PER[house_nb_med[[i]]],na.rm=TRUE)
+  house_def_med$med_V_TOT_HOG2[i] <- mean(house_def_med$med_V_TOT_HOG[house_nb_med[[i]]],na.rm=TRUE)
+  house_def_med$mod_VA1_ESTRATO2[i] <- moda(house_def_med$mod_VA1_ESTRATO[house_nb_med[[i]]])
+  house_def_med$mod_V_MAT_PARED2[i] <- moda(house_def_med$mod_V_MAT_PARED[house_nb_med[[i]]])
+  house_def_med$mod_V_MAT_PISO2[i] <- moda(house_def_med$mod_V_MAT_PISO[house_nb_med[[i]]])
+  house_def_med$mod_VE_RECBAS2[i] <- moda(house_def_med$mod_VE_RECBAS[house_nb_med[[i]]])
+}
+
+#Revisar NA
+sapply(house_def_med, function(y) sum(length(which(is.na(y)))))
+
+#Nombres de la base
+names(house_def_med)
+
+lista_definitivas <- c("property_id","city", "price", "surface_total", "surface_covered", "bedrooms",
+                       "title", "description", "property_type", "operation_type", "Final_Bathrooms", 
+                       "Final_Metros", "geometry", "COD_DANE", "mean_H_NRO_CUARTOS2", "med_H_NRO_CUARTOS2",
+                       "sum_HA_TOT_PER2", "med_V_TOT_HOG2", "mod_VA1_ESTRATO2", "mod_V_MAT_PARED2",
+                       "mod_V_MAT_PISO2", "mod_VE_RECBAS2")
+
+#Guardar la base definitiva
+houses_medellin <- house_def_med[,(names(house_def_med) %in% lista_definitivas)]
+
+write_rds(houses_medellin,"BaseMedellín.rds")
+
+#Juntar las filas
+houses_completa <- bind_rows(houses_bogota, houses_medellin)
+#Revisar NA
+sapply(houses_completa, function(y) sum(length(which(is.na(y)))))
+
+#Guardar/exportar la base
+write_rds(houses_completa,"BaseCompleta.rds")
+
+
+
+
+
+
+
+
+
+####Esto no va
 
 train_sf$bathrooms_Def <- NA
 train_sf$metros_Def <- NA
