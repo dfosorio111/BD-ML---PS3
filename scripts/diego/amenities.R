@@ -543,7 +543,7 @@ med_sf_polygon <- readRDS('med_sf_polygon.RDS')
 
 
 # crear sf_polygon de la ciudad Cali
-cali_sf_polygon <- getbb(place_name = "Cali, Colombia", 
+cali_sf_polygon <- getbb(place_name = "Cali", 
                          featuretype = "boundary:administrative", 
                          format_out = "sf_polygon") %>% .$multipolygon
 
@@ -588,49 +588,373 @@ leaflet() %>% addTiles() %>% addPolygons(data=bogota_sf,col="red") %>% addCircle
 # graficar sf_polygon de la interseccion entre sf de datos de entrenamiento  e interseccion bogota_sf, 
 #leaflet() %>% addTiles() %>% addPolygons(data=bogota_sf,col="red") %>% addCircles(data=houses_inter2)
 
-
-
 ## crop puntos con poligono (opcion 3)
 #house_chapi <- houses[chapinero,]
 #leaflet() %>% addTiles() %>% addPolygons(data=chapinero,col="red") %>% addCircles(data=house_chapi)
-
-
 
 
 ### **5.5. Distancia a amenities**
 ## Calcular Distancia a muchos polygonos
 
 
-
 ### Distancia a amenities Bogota
 
 # arts_centre_bog
-matrix_dist_arts_centre_bog <- st_distance(x=houses_bogota  , y=osm_arts_centre_Bogota_sf)
-
-#matrix_dist_parque[1:5,1:5]
+matrix_dist_arts_centre_bog <- st_distance(x=houses_inter1  , y=osm_arts_centre_Bogota_sf)
 
 min_dist_arts_centre_bog <- apply(matrix_dist_arts_centre_bog , 1 , min)
 
 min_dist_arts_centre_bog %>% head()
 
-house_chapi$arts_centre_bog = min_dist_arts_centre_bog
+houses_inter1$arts_centre_bog = min_dist_arts_centre_bog
+
+
+# bank_bog
+matrix_dist_bank_bog <- st_distance(x=houses_inter1  , y=osm_bank_Bogota_sf)
+
+min_dist_bank_bog <- apply(matrix_dist_bank_bog , 1 , min)
+
+min_dist_bank_bog %>% head()
+
+houses_inter1$bank_bog = min_dist_bank_bog
+
+
+
+# bicycle_parking_bog
+matrix_dist_bicycle_parking_bog <- st_distance(x=houses_inter1  , y=osm_bicycle_parking_Bogota_sf)
+
+min_dist_bicycle_parking_bog <- apply(matrix_dist_bicycle_parking_bog , 1 , min)
+
+min_dist_bicycle_parking_bog %>% head()
+
+houses_inter1$bicycle_parking_bog = min_dist_bicycle_parking_bog
+
+
+# bus_station_bog
+matrix_dist_bus_station_bog <- st_distance(x=houses_inter1  , y=osm_bus_station_Bogota_sf)
+
+min_dist_bus_station_bog <- apply(matrix_dist_bus_station_bog , 1 , min)
+
+min_dist_bus_station_bog %>% head()
+
+houses_inter1$bus_station_bog = min_dist_bus_station_bog
+
+
+# casino_bog
+matrix_dist_casino_bog <- st_distance(x=houses_inter1  , y=osm_casino_Bogota_sf)
+
+min_dist_casino_bog <- apply(matrix_dist_casino_bog , 1 , min)
+
+min_dist_casino_bog %>% head()
+
+houses_inter1$casino_bog = min_dist_casino_bog
+
+
+# childcare_bog
+matrix_dist_childcare_bog <- st_distance(x=houses_inter1  , y=osm_childcare_Bogota_sf)
+
+min_dist_childcare_bog <- apply(matrix_dist_childcare_bog , 1 , min)
+
+min_dist_childcare_bog %>% head()
+
+houses_inter1$childcare_bog = min_dist_childcare_bog
+
+
+# cinema_bog
+matrix_dist_cinema_bog <- st_distance(x=houses_inter1  , y=osm_cinema_Bogota_sf)
+
+min_dist_cinema_bog <- apply(matrix_dist_cinema_bog , 1 , min)
+
+min_dist_cinema_bog %>% head()
+
+houses_inter1$cinema_bog = min_dist_cinema_bog
+
+
+
+# clinic_bog
+matrix_dist_clinic_bog <- st_distance(x=houses_inter1  , y=osm_clinic_Bogota_sf)
+
+min_dist_clinic_bog <- apply(matrix_dist_clinic_bog , 1 , min)
+
+min_dist_clinic_bog %>% head()
+
+houses_inter1$clinic_bog = min_dist_clinic_bog
+
+
+# college_bog
+matrix_dist_college_bog <- st_distance(x=houses_inter1  , y=osm_college_Bogota_sf)
+
+min_dist_college_bog <- apply(matrix_dist_college_bog , 1 , min)
+
+min_dist_college_bog %>% head()
+
+houses_inter1$college_bog = min_dist_college_bog
+
+
+# community_centre_bog
+matrix_dist_community_centre_bog <- st_distance(x=houses_inter1  , y=osm_community_centre_Bogota_sf)
+
+min_dist_community_centre_bog <- apply(matrix_dist_community_centre_bog , 1 , min)
+
+min_dist_community_centre_bog %>% head()
+
+houses_inter1$community_centre_bog = min_dist_community_centre_bog
+
+
+# conference_centre_bog
+matrix_dist_conference_centre_bog <- st_distance(x=houses_inter1  , y=osm_conference_centre_Bogota_sf)
+
+min_dist_conference_centre_bog <- apply(matrix_dist_conference_centre_bog , 1 , min)
+
+min_dist_conference_centre_bog %>% head()
+
+houses_inter1$conference_centre_bog = min_dist_conference_centre_bog
+
+
+
+# dentist_bog
+matrix_dist_dentist_bog <- st_distance(x=houses_inter1  , y=osm_dentist_Bogota_sf)
+
+min_dist_dentist_bog <- apply(matrix_dist_dentist_bog , 1 , min)
+
+min_dist_dentist_bog %>% head()
+
+houses_inter1$dentist_bog = min_dist_dentist_bog
+
+
+# doctors_bog
+matrix_dist_doctors_bog <- st_distance(x=houses_inter1  , y=osm_doctors_Bogota_sf)
+
+min_dist_doctors_bog <- apply(matrix_dist_doctors_bog , 1 , min)
+
+min_dist_doctors_bog %>% head()
+
+houses_inter1$doctors_bog = min_dist_doctors_bog
+
+
+# events_bog
+matrix_dist_events_bog <- st_distance(x=houses_inter1  , y=osm_events_venue_Bogota_sf)
+
+min_dist_events_bog <- apply(matrix_dist_events_bog , 1 , min)
+
+min_dist_events_bog %>% head()
+
+houses_inter1$events_bog = min_dist_events_bog
+
+
+# fast_food_bog
+matrix_dist_fast_food_bog <- st_distance(x=houses_inter1  , y=osm_fast_food_Bogota_sf)
+
+min_dist_fast_food_bog <- apply(matrix_dist_fast_food_bog , 1 , min)
+
+min_dist_fast_food_bog %>% head()
+
+houses_inter1$fast_food_bog = min_dist_fast_food_bog
+
+
+# hospital_bog
+matrix_dist_hospital_bog <- st_distance(x=houses_inter1  , y=osm_hospital_Bogota_sf)
+
+min_dist_hospital_bog <- apply(matrix_dist_hospital_bog , 1 , min)
+
+min_dist_hospital_bog %>% head()
+
+houses_inter1$hospital_bog = min_dist_hospital_bog
+
+
+# kindergarten_bog
+matrix_dist_kindergarten_bog <- st_distance(x=houses_inter1  , y=osm_kindergarten_Bogota_sf)
+
+min_dist_kindergarten_bog <- apply(matrix_dist_kindergarten_bog , 1 , min)
+
+min_dist_kindergarten_bog %>% head()
+
+houses_inter1$kindergarten_bog = min_dist_kindergarten_bog
+
+
+
+
+# library_bog
+matrix_dist_library_bog <- st_distance(x=houses_inter1  , y=osm_library_Bogota_sf)
+
+min_dist_library_bog <- apply(matrix_dist_library_bog , 1 , min)
+
+min_dist_library_bog %>% head()
+
+houses_inter1$library_bog = min_dist_library_bog
+
+
+# love_hotel_bog
+matrix_dist_love_hotel_bog <- st_distance(x=houses_inter1  , y=osm_love_hotel_Bogota_sf)
+
+min_dist_love_hotel_bog <- apply(matrix_dist_love_hotel_bog , 1 , min)
+
+min_dist_love_hotel_bog %>% head()
+
+houses_inter1$love_hotel_bog = min_dist_love_hotel_bog
+
+
+
+# marketplace_bog
+matrix_dist_marketplace_bog <- st_distance(x=houses_inter1  , y=osm_marketplace_Bogota_sf)
+
+min_dist_marketplace_bog <- apply(matrix_dist_marketplace_bog , 1 , min)
+
+min_dist_marketplace_bog %>% head()
+
+houses_inter1$marketplace_bog = min_dist_marketplace_bog
+
+
+# monastery_bog
+matrix_dist_monastery_bog <- st_distance(x=houses_inter1  , y=osm_monastery_Bogota_sf)
+
+min_dist_monastery_bog <- apply(matrix_dist_monastery_bog , 1 , min)
+
+min_dist_monastery_bog %>% head()
+
+houses_inter1$monastery_bog = min_dist_monastery_bog
+
+
+# parking_bog
+matrix_dist_parking_bog <- st_distance(x=houses_inter1  , y=osm_parking_Bogota_sf)
+
+min_dist_parking_bog <- apply(matrix_dist_parking_bog , 1 , min)
+
+min_dist_parking_bog %>% head()
+
+houses_inter1$parking_bog = min_dist_parking_bog
+
+
+
+# pharmacy_bog
+matrix_dist_pharmacy_bog <- st_distance(x=houses_inter1  , y=osm_pharmacy_Bogota_sf)
+
+min_dist_pharmacy_bog <- apply(matrix_dist_pharmacy_bog , 1 , min)
+
+min_dist_pharmacy_bog %>% head()
+
+houses_inter1$pharmacy_bog = min_dist_pharmacy_bog
+
+
+# worship_bog
+matrix_dist_worship_bog <- st_distance(x=houses_inter1  , y=osm_place_of_worship_Bogota_sf)
+
+min_dist_worship_bog <- apply(matrix_dist_worship_bog , 1 , min)
+
+min_dist_worship_bog %>% head()
+
+houses_inter1$worship_bog = min_dist_worship_bog
+
+
+# police_bog
+matrix_dist_police_bog <- st_distance(x=houses_inter1  , y=osm_police_Bogota_sf)
+
+min_dist_police_bog <- apply(matrix_dist_police_bog , 1 , min)
+
+min_dist_police_bog %>% head()
+
+houses_inter1$police_bog = min_dist_police_bog
+
+
+
+# post_office_bog
+matrix_dist_post_office_bog <- st_distance(x=houses_inter1  , y=osm_post_office_Bogota_sf)
+
+min_dist_post_office_bog <- apply(matrix_dist_post_office_bog , 1 , min)
+
+min_dist_post_office_bog %>% head()
+
+houses_inter1$post_office_bog = min_dist_post_office_bog
+
+
+# recycling_bog
+matrix_dist_recycling_bog <- st_distance(x=houses_inter1  , y=osm_recycling_Bogota_sf)
+
+min_dist_recycling_bog <- apply(matrix_dist_recycling_bog , 1 , min)
+
+min_dist_recycling_bog %>% head()
+
+houses_inter1$recycling_bog = min_dist_recycling_bog
+
+
+
+### restaurant_bog
+matrix_dist_restaurant_bog <- st_distance(x=houses_inter1  , y=osm_restaurant_Bogota_sf)
+
+min_dist_restaurant_bog <- apply(matrix_dist_restaurant_bog , 1 , min)
+
+min_dist_restaurant_bog %>% head()
+
+houses_inter1$restaurant_bog = min_dist_restaurant_bog
+
+
+# school_bog
+matrix_dist_school_bog <- st_distance(x=houses_inter1  , y=osm_school_Bogota_sf)
+
+min_dist_school_bog <- apply(matrix_dist_school_bog , 1 , min)
+
+min_dist_school_bog %>% head()
+
+houses_inter1$post_school_bog = min_dist_school_bog
+
+
+# social_facility_bog
+matrix_dist_social_facility_bog <- st_distance(x=houses_inter1  , y=osm_social_facility_Bogota_sf )
+
+min_dist_social_facility_bog <- apply(matrix_dist_social_facility_bog , 1 , min)
+
+min_dist_social_facility_bog %>% head()
+
+houses_inter1$social_facility_bog = min_dist_social_facility_bog
+
+
+# theatre_bog
+matrix_dist_theatre_bog <- st_distance(x=houses_inter1  , y=osm_theatre_Bogota_sf )
+
+min_dist_theatre_bog <- apply(matrix_dist_theatre_bog , 1 , min)
+
+min_dist_theatre_bog %>% head()
+
+houses_inter1$theatre_bog = min_dist_theatre_bog
+
+
+
+# university_bog
+matrix_dist_university_bog <- st_distance(x=houses_inter1  , y=osm_university_Bogota_sf )
+
+min_dist_university_bog <- apply(matrix_dist_university_bog , 1 , min)
+
+min_dist_university_bog %>% head()
+
+houses_inter1$university_bog = min_dist_university_bog
+
+
+# veterinary_bog
+matrix_dist_veterinary_bog <- st_distance(x=houses_inter1  , y=osm_veterinary_Bogota_sf )
+
+min_dist_veterinary_bog <- apply(matrix_dist_veterinary_bog , 1 , min)
+
+min_dist_veterinary_bog %>% head()
+
+houses_inter1$veterinary_bog = min_dist_veterinary_bog
+
+
+
+### GUARDAR BASES DE DATOS DE ENTRENAMIENTO CON AMENITIES BOGOTA
+
+write_rds(houses_inter1,'amenities_bogota.RDS')
+
+
+
+### CARGAR BASES DE DATOS DE ENTRENAMIENTO CON AMENITIES BOGOTA
+
+houses_inter1 <- readRDS('amenities_bogota.RDS')
 
 
 
 
 
-# restaurants
 
-# arts_centre_bog
-matrix_dist_restaurant_bog <- st_distance(x=houses_bogota  , y=osm_arts_centre_Bogota_sf)
-
-#matrix_dist_parque[1:5,1:5]
-
-min_dist_arts_centre_bog <- apply(matrix_dist_arts_centre_bog , 1 , min)
-
-min_dist_arts_centre_bog %>% head()
-
-houses_inter$arts_centre_bog = min_dist_arts_centre_bog
 
 
 
@@ -638,6 +962,33 @@ houses_inter$arts_centre_bog = min_dist_arts_centre_bog
 
 
 
+
+
+### GUARDAR BASES DE DATOS DE ENTRENAMIENTO CON AMENITIES BOGOTA
+
+write_rds(houses_inter2,'amenities_medellin.RDS')
+
+
+### CARGAR BASES DE DATOS DE ENTRENAMIENTO CON AMENITIES BOGOTA
+
+houses_inter2 <- readRDS('amenities_medellin.RDS')
+
+
+
+
+
+
 ### Distancia a amenities Cali
+
+
+
+### GUARDAR BASES DE DATOS DE ENTRENAMIENTO CON AMENITIES BOGOTA
+
+write_rds(houses_inter3,'amenities_cali.RDS')
+
+
+### CARGAR BASES DE DATOS DE ENTRENAMIENTO CON AMENITIES BOGOTA
+
+houses_inter3 <- readRDS('amenities_cali.RDS')
 
 
