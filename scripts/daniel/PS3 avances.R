@@ -394,9 +394,7 @@ db <- viv_hog_mgn_med %>%
   )
 
 
-#Unir Censo con Manzanas para Bogotá
-
-
+#Unir Censo con Manzanas para Medellín
 #Se cambia el crs de las manzanas para que se pueda hacer el pegue
 mnz_med <- st_transform(mnz_med, 4326)
 mnz_med <- mnz_med%>%select(COD_DANE)
@@ -406,7 +404,7 @@ house_med <- st_join(x=train_sf , y=mnz_med)
 #names(Censo)
 
 house_def_med <- left_join(house_med, db,by=c("COD_DANE"="COD_DANE_ANM"))
-#Probando Bogotá
+#Probando Medellín
 house_def_med <- house_def_med%>%subset(city == "Medellín")
 
 sapply(house_def%>%subset(city == "Medellín"), function(y) sum(length(which(is.na(y)))))

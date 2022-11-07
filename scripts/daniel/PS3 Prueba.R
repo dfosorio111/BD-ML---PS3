@@ -88,6 +88,7 @@ for (i in 1:nrow(train)) {
   }
 }
 
+
 #Convertir datafram a sf
 train_sf <- st_as_sf(x = train, ## datos
                      coords=c("lon","lat"), ## coordenadas
