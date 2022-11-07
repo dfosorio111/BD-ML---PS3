@@ -177,3 +177,134 @@ sum(is.na(train_sf$Final_Metros))
 #Exportar la base 
 write_rds(train_sf, "BogMed_sf.rds")
 
+
+#Polígonos de los mapas
+#Medellín
+Medallo <- getbb(place_name = "Medellín, Colombia", 
+                 featuretype = "boundary:administrative", 
+                 format_out = "sf_polygon") 
+
+#Graficado
+leaflet() %>%
+  addTiles() %>%
+  addPolygons(data=Medallo)
+
+#Exportar
+write_rds(Medallo, "MedellínPoligono.rds")
+
+#Bogotá
+Bog <- getbb(place_name = "Bogotá Colombia", 
+             featuretype = "boundary:administrative", 
+             format_out = "sf_polygon") %>% .$multipolygon
+#Graficado
+leaflet() %>%
+  addTiles() %>%
+  addPolygons(data=Bog)
+
+#Exportar
+write_rds(Bog, "BogotáPoligono.rds")
+
+
+#Cali
+Cali <- getbb(place_name = "Cali, Colombia", 
+                 featuretype = "boundary:administrative", 
+                 format_out = "sf_polygon") 
+
+#Graficado
+leaflet() %>%
+  addTiles() %>%
+  addPolygons(data=Cali)
+
+#Exportar
+write_rds(Cali, "CaliPoligono.rds")
+
+################Para obtener divisiones dentro de las ciudades
+
+#Bogotá
+## get Bogota-UPZ 
+bog <- opq(bbox = getbb("Bogota Colombia")) %>%
+  add_osm_feature(key="boundary", value="administrative") %>% 
+  osmdata_sf()
+bog <- bog$osm_multipolygons %>% subset(admin_level==9)
+
+## basic plot
+ggplot() + geom_sf(data=bog)
+
+#Exportar
+write_rds(bog, "BogotáUPZ.rds")
+
+## get Medellín 
+med <- opq(bbox = getbb("Medellín Colombia")) %>%
+  add_osm_feature(key="boundary", value="administrative") %>% 
+  osmdata_sf()
+med <- med$osm_multipolygons %>% subset(admin_level==8)
+
+## basic plot
+ggplot() + geom_sf(data=med)
+
+#Exportar
+write_rds(med, "MedellínComunas.rds")
+
+## get Cali
+cal <- opq(bbox = getbb("Cali Colombia")) %>%
+  add_osm_feature(key="boundary", value="administrative") %>% 
+  osmdata_sf()
+cal <- cal$osm_multipolygons %>% subset(admin_level==8)
+
+#Exportar
+write_rds(cal, "CaliComunas.rds")
+
+## basic plot
+ggplot() + geom_sf(data=cal)
+
+
+
+
+###############Pruebas más desagregadas
+## get Medellín 
+med9 <- opq(bbox = getbb("Medellín Colombia")) %>%
+  add_osm_feature(key="boundary", value="administrative") %>% 
+  osmdata_sf()
+med9 <- med9$osm_multipolygons %>% subset(admin_level==9)
+
+## basic plot
+ggplot() + geom_sf(data = med) + geom_sf(data=med9)
+
+#Exportar
+write_rds(med9, "MedellínBarrios.rds")
+
+
+## get Cali
+cal9 <- opq(bbox = getbb("Cali Colombia")) %>%
+  add_osm_feature(key="boundary", value="administrative") %>% 
+  osmdata_sf()
+cal9 <- cal9$osm_multipolygons %>% subset(admin_level==9)
+
+## basic plot
+ggplot() + geom_sf(data=cal9)
+
+#Exportar
+write_rds(cal9, "CaliBarrios.rds")
+
+#Bogotá localidades
+## get Bogota
+bog8 <- opq(bbox = getbb("Bogota Colombia")) %>%
+  add_osm_feature(key="boundary", value="administrative") %>% 
+  osmdata_sf()
+bog8 <- bog8$osm_multipolygons %>% subset(admin_level==8)
+
+## basic plot
+ggplot() + geom_sf(data=bog8)
+
+#Exportar
+write_rds(bog8, "BogotáLocalidades.rds")
+
+
+#Bogotá barrios (Sale un mapa de Colombia muy raro)
+bog10 <- opq(bbox = getbb("Bogota Colombia")) %>%
+  add_osm_feature(key="boundary", value="administrative") %>% 
+  osmdata_sf()
+bog10 <- bog10$osm_multipolygons %>% subset(admin_level=10)
+
+## basic plot
+ggplot() + geom_sf(data=bog10)
