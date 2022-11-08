@@ -36,7 +36,12 @@ x1 <- "[:digit:]+[:punct:]+[:digit:]+[:space:]+"
 x2 <- "[:digit:]+[:punct:]+[:digit:]+"
 x3 <- "[:digit:]+[:space:]+"
 x4 <- "[:digit:]+"
-x5 <- "[:word:]+[:space:]+"
+x5 <- "[:space:]+[:digit:]+[:punct:]+[:digit:]+[:space:]+"
+x6 <- "[:space:]+[:digit:]+[:punct:]+[:digit:]+"
+x7 <- "[:space:]+[:digit:]+[:space:]+"
+x8 <- "[:space:]+[:digit:]+"
+x9 <- "[:word:]+[:space:]+"
+x10 <- "[:word:]+"
 
 #Se crea la variable y se llena con NA's que luego se reemplazan con los valores correctos
 train$baños <- NA

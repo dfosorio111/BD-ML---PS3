@@ -56,7 +56,6 @@ houses_completa$Final_Bathrooms_2[which(houses_completa$property_id == houses_co
 houses_completa$Final_Metros_2 <- NA
 houses_completa$Final_Metros_2[which(houses_completa$property_id == houses_completa2$property_id)] <- houses_completa2$Final_Metros_2[which(houses_completa$property_id == houses_completa2$property_id)]
 
-
 #names(houses_completa)
 #View(houses_completa%>%dplyr::select("description","Final_Bathrooms", "Final_Bathrooms_2", "Final_Metros", "Final_Metros_2"))
 
@@ -83,4 +82,23 @@ keep2 <- c(names(houses_completa), "name")
 houses_geography_def <-houses_geography_def[,(names(houses_geography_def) %in% keep2)]
 
 sapply(houses_geography_def, function(y) sum(length(which(is.na(y)))))
+
+#Incluir las que faltaron de la original
+#Se carga la base que tiene las bases de Medellín y Bogotá modificadas
+houses_completa2 <- readRDS("BogMed_sf.rds")
+class(houses_completa2)
+names(houses_completa2)
+names(houses_geography_def)
+
+houses_geography_def$description <- NA
+houses_geography_def$bathrooms <- NA
+houses_geography_def$description[which(houses_geography_def$property_id == houses_completa2$property_id)] <- houses_completa2$description[which(houses_geography_def$property_id == houses_completa2$property_id)]
+houses_geography_def$bathrooms[which(houses_geography_def$property_id == houses_completa2$property_id)] <- houses_completa2$bathrooms[which(houses_geography_def$property_id == houses_completa2$property_id)]
+
+
+class(houses_geography)
+
+
+#Exportar
+write_rds(houses_geography_def, "BaseGeografía.rds")
 
