@@ -1,0 +1,156 @@
+### FUNCION
+
+# funcion para convertir palabras en numeros
+
+word2num <- function(word){
+  
+  # split sobre el patron de entrada INICIAL
+  wsplit <- strsplit(tolower(word)," ")[[1]]
+  
+  
+  contador <- 0
+  for (word in wsplit) {
+    
+    contador <- contador + 1
+    if (word=="y") {
+      wsplit <- wsplit[-contador]
+    }
+    
+  }
+
+  
+  
+  # crear diccionarios de orden de magnitud
+  one_digits <- list(cero=0, un=1, dos=2, tres=3, cuatro=4, cinco=5,
+                     seis=6, siete=7, ocho=8, nueve=9)
+  teens <- list(once=11, doce=12, trece=13, catorce=14, quince=15,
+                dieciseis=16, diecisiete =17, dieciocho =18, diecinueve=19)
+  
+  veintis <- list(veintiun=21, veintidos=22, veintitres=23, veinticuatro=24, veinticinco=25,
+                  veintiseis=26, veintisiete =27, veintiocho =28, veintinueve=29)
+  
+  ten_digits <- list(diez=10, veinte=20, treinta=30, cuarenta=40, cincuenta=50,
+                     sesenta=60, setenta=70, ochenta=80, noventa=90)
+  
+  hun_digits <- list(ciento=100, doscientos=200, trescientos=300, cuatrocientos=400, quinientos=500,
+                     seiscientos=600, setecientos=700, ochocientos=800, novecientos=900)
+  
+  
+  doubles <- c(teens,ten_digits)
+  
+  
+  # numero de salida
+  out <- 0
+  
+  i <- 1
+  
+  # itera sobre la lista de split de patron
+  while(i <= length(wsplit)){
+    
+    # cuenta numero de palabras auxiliar  crear variable j=1
+    j <- 1
+    
+    
+    ### SI PATRON ES 100 O 1000
+    # 1 palabra Y es cien=100
+    if(i==1 && wsplit[i]=="uno")
+      temp <- 1
+    
+    if(i==1 && wsplit[i]=="diez")
+      temp <- 10
+    
+    
+    if(i==1 && wsplit[i]=="cien")
+      temp <- 100
+    
+    # 1 palabra Y es mil=1000
+    else if(i==1 && wsplit[i]=="mil")
+      temp <- 1000
+    
+    
+    ### SI PATRON ESTA EN LOS DICCIONARIOS
+    
+    # wsplit[i] esta en ones
+    else if(wsplit[i] %in% names(one_digits))
+      temp <- as.numeric(one_digits[wsplit[i]])
+    
+    # wsplit[i] esta en teens
+    else if(wsplit[i] %in% names(teens))
+      temp <- as.numeric(teens[wsplit[i]])
+    
+    
+    # wsplit[i] esta en veintis
+    else if(wsplit[i] %in% names(veintis))
+      temp <- as.numeric(veintis[wsplit[i]])
+    
+    
+    # wsplit[i] esta en ten_digits
+    else if(wsplit[i] %in% names(ten_digits))
+      temp <- (as.numeric(ten_digits[wsplit[i]]))
+    
+    
+    # wsplit[i] esta en hun_digits
+    else if(wsplit[i] %in% names(hun_digits))
+      temp <- (as.numeric(hun_digits[wsplit[i]]))
+    
+    
+    
+    
+    ### PATRONES COMPUESTOS
+    
+    # i es menor al tamaño de wsplit Y  siguiente palabra wsplit[i+1] es ciento
+    if(i < length(wsplit) && wsplit[i+1]=="ciento"){
+      
+      # i es mayor a 1 Y anterior palabra wsplit[i-1] es ciento o mil
+      if(i>1 && wsplit[i-1] %in% c("ciento","mil"))
+        
+        # numero de salida  out es 100*temp + out
+        out <- out + 100*temp
+      else
+        out <- 100*(out + temp)
+      
+      # j es 2
+      j <- 2
+    }
+    
+    
+    
+    # i es menor al tamaño de wsplit Y siguiente palabra wsplit[i+1] es mil
+    else if(i < length(wsplit) && wsplit[i+1]=="mil"){
+      
+      # i es mayor a 1 Y anterior palabra wsplit[i-1] es ciento o mil
+      if(i>1 && wsplit[i-1] %in% c("ciento","mil"))
+        
+        # numero de salida  out es 1000*temp + out
+        out <- out + 1000*temp
+      else
+        
+        out <- 1000*(out + temp)
+      
+      # j es 2
+      j <- 2
+    }
+    
+#   # i es menor al tamaño de wsplit Y siguiente palabra wsplit[i+1] es 2 cifras
+#    else if(i < length(wsplit) && wsplit[i+1] %in% names(doubles)){
+#      temp <- temp*100
+#      out <- out + temp
+#    }
+    
+    
+    else{
+      out <- out + temp
+    }
+    i <- i + j
+  }
+  return(list(word,out))
+}
+
+
+
+word2num("trescientos setenta y dos")
+
+
+
+
+
