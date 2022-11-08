@@ -66,6 +66,17 @@ bogota_sf <- getbb(place_name = "Bogota",
 leaflet() %>% addTiles() %>% addPolygons(data=bogota_sf)
 
 
+# obtener caja de coordenadas de Medellin
+# featuretype = "boundary:administrative"
+# format_out = sf polygon
+medellin_sf <- getbb(place_name = "Medellín", 
+                   featuretype = "boundary:administrative", 
+                   format_out = "sf_polygon") %>% .$multipolygon
+
+leaflet() %>% addTiles() %>% addPolygons(data=medellin_sf)
+
+
+
 ## filtrar datos de prueba de Cali con geometria
 
 # obtener caja de coordenadas de Bogota
@@ -487,9 +498,6 @@ word2num <- function(word){
   return(list(word,out))
 }
 
-
-
-
 #### METROS
 
 # cargar variable de texto de descripcion en minuscula
@@ -516,7 +524,7 @@ train_sf$bathrooms_regex <- as.numeric(train_sf$bathrooms_regex)
 
 ### REGEX PALABRAS
 
-### PATRONES
+### PATRONES DE PALABRAS
 x1 <- "[:word:]+[:space:]+[:word:]+[:space:]+[:word:]+[:space:]+[:word:]+[:space:]+"  # "string mts"
 x2 <- "[:word:]+[:space:]+[:word:]+[:space:]+[:word:]+[:space:]+"
 x3 <- "[:word:]+[:space:]+[:word:]+[:space:]+"
@@ -525,7 +533,7 @@ x5 <- "[:word:]+"
 
 # BASE SAMPLE
 
-prueba <- houses_inter1[1:100,]
+prueba <- houses_inter1[1:1000,]
 
 
 # crear variables de patrones
@@ -535,8 +543,18 @@ prueba$new_surface3 <- NA
 prueba$new_surface4 <- NA
 prueba$new_surface5 <- NA
 
+# variables del IF
+
+prueba$new_surface1_1 <- NA
+prueba$new_surface2_2 <- NA
+prueba$new_surface3_3 <- NA
+prueba$new_surface4_4 <- NA
+prueba$new_surface5_5 <- NA
+
+# iterar por sufijos de 'metros'
 for (i in c( "metros", "m2","mt2", "m ","cuadrad","mtr", "mts",  "metrs", "meters","area", "área","espacio de")){
   
+  # agregar variable new_surface# que extrae de la variable de descripcion el patron i
   prueba <- prueba %>% 
       mutate(new_surface1 = ifelse(is.na(new_surface1)==T,str_extract(string=description , pattern=paste0(x1,i)),new_surface1),
              new_surface2 = ifelse(is.na(new_surface2)==T,str_extract(string=description , pattern=paste0(x2,i)),new_surface2),
@@ -546,7 +564,8 @@ for (i in c( "metros", "m2","mt2", "m ","cuadrad","mtr", "mts",  "metrs", "meter
       )
 }
 
-## limpiar variables de palabras
+
+## limpiar variables de patrones i extraidos
 for (i in c("m2","mt2", "m ", "metros","cuadrad","mtr", "mts", "metrs", "meters","area", "área","espacio de",  "\n\n")){
   prueba$new_surface1 <- str_trim(gsub(i,"",prueba$new_surface1))
   prueba$new_surface2 <- str_trim(gsub(i,"",prueba$new_surface2))
@@ -556,25 +575,20 @@ for (i in c("m2","mt2", "m ", "metros","cuadrad","mtr", "mts", "metrs", "meters"
 }
 
 
-# variables del IF
-
-prueba$new_surface2_2 <- NA
-
 
 ### TRY CATCH: UN FOR PARA CADA VARIABLE
 
-
 for (i in 1:nrow(prueba)) {
   
-  fine <- NA
+  fine <- FALSE
   
   tryCatch(               
     
     # Specifying expression
     expr = {              
       
-      word2num(prueba$new_surface2[i])
-      fine <- "FINE!!!"
+      word2num(prueba$new_surface1[i])
+      fine <- TRUE
       print("Everything was fine.")
     },
     # Specifying error message
@@ -592,14 +606,218 @@ for (i in 1:nrow(prueba)) {
     }
   )
   
-
-  if (is.na(fine)==FALSE) {
+  
+  if (fine == TRUE ) {
     
-    prueba$new_surface2_2[i] <- word2num(prueba$new_surface2[i])[2]
+    prueba$new_surface1_1[i] <- as.numeric(word2num(prueba$new_surface1[i])[[2]])
     
   }
   
 }
+
+
+
+for (i in 1:nrow(prueba)) {
+  
+  fine <- FALSE
+  
+  tryCatch(               
+    
+    # Specifying expression
+    expr = {              
+      
+      word2num(prueba$new_surface2[i])
+      fine <- TRUE
+      print("Everything was fine.")
+    },
+    # Specifying error message
+    error = function(e){         
+      
+      print("There was an error message.")
+    },
+    
+    warning = function(w){      
+      print("There was a warning message.")
+    },
+    
+    finally = {            
+      print("finally Executed")
+    }
+  )
+  
+  
+  if (fine == TRUE ) {
+    
+    prueba$new_surface2_2[i] <- as.numeric(word2num(prueba$new_surface2[i])[[2]])
+    
+  }
+  
+}
+
+
+
+for (i in 1:nrow(prueba)) {
+  
+  fine <- FALSE
+  
+  tryCatch(               
+    
+    # Specifying expression
+    expr = {              
+      
+      word2num(prueba$new_surface3[i])
+      fine <- TRUE
+      print("Everything was fine.")
+    },
+    # Specifying error message
+    error = function(e){         
+      
+      print("There was an error message.")
+    },
+    
+    warning = function(w){      
+      print("There was a warning message.")
+    },
+    
+    finally = {            
+      print("finally Executed")
+    }
+  )
+  
+  
+  if (fine == TRUE ) {
+    
+    prueba$new_surface3_3[i] <- as.numeric(word2num(prueba$new_surface3[i])[[2]])
+    
+  }
+  
+}
+
+
+for (i in 1:nrow(prueba)) {
+  
+  fine <- FALSE
+  
+  tryCatch(               
+    
+    # Specifying expression
+    expr = {              
+      
+      word2num(prueba$new_surface4[i])
+      fine <- TRUE
+      print("Everything was fine.")
+    },
+    # Specifying error message
+    error = function(e){         
+      
+      print("There was an error message.")
+    },
+    
+    warning = function(w){      
+      print("There was a warning message.")
+    },
+    
+    finally = {            
+      print("finally Executed")
+    }
+  )
+  
+  
+  if (fine == TRUE ) {
+    
+    prueba$new_surface4_4[i] <- as.numeric(word2num(prueba$new_surface4[i])[[2]])
+    
+  }
+  
+}
+
+
+for (i in 1:nrow(prueba)) {
+  
+  fine <- FALSE
+  
+  tryCatch(               
+    
+    # Specifying expression
+    expr = {              
+      
+      word2num(prueba$new_surface5[i])
+      fine <- TRUE
+      print("Everything was fine.")
+    },
+    # Specifying error message
+    error = function(e){         
+      
+      print("There was an error message.")
+    },
+    
+    warning = function(w){      
+      print("There was a warning message.")
+    },
+    
+    finally = {            
+      print("finally Executed")
+    }
+  )
+  
+  
+  if (fine == TRUE ) {
+    
+    prueba$new_surface5_5[i] <- as.numeric(word2num(prueba$new_surface5[i])[[2]])
+    
+  }
+  
+}
+
+
+
+# crear variable new_surfaceFinal
+
+prueba$new_surfaceFinal <- NA
+
+
+# iterar sobre las filas 
+for (i in 1:nrow(prueba)) {
+  
+  # convertir variables de texto con NA a -1
+  if (is.na(prueba$new_surface1_1[i])==TRUE) {
+    prueba$new_surface1_1[i] = -1
+  }
+  if (is.na(prueba$new_surface2_2[i])==TRUE) {
+    prueba$new_surface2_2[i] = -1
+  }
+  if (is.na(prueba$new_surface3_3[i])==TRUE) {
+    prueba$new_surface3_3[i] = -1
+  }
+  if (is.na(prueba$new_surface4_4[i])==TRUE) {
+    prueba$new_surface4_4[i] = -1
+  }
+  if (is.na(prueba$new_surface5_5[i])==TRUE) {
+    prueba$new_surface5_5[i] = -1
+  }
+  
+  #prueba$new_surfaceFinal[i] <-max(prueba$new_surface1_1[i],prueba$new_surface2_2[i],prueba$new_surface3_3[i],prueba$new_surface4_4[i],prueba$new_surface5_5[i])
+  
+  if (prueba$new_surface1_1[i]>prueba$new_surface2_2[i]) {
+    prueba$new_surfaceFinal[i] <- prueba$new_surface1_1[i]
+  }else if (prueba$new_surface2_2[i]>prueba$new_surface3_3[i]) {
+    prueba$new_surfaceFinal[i] <- prueba$new_surface2_2[i]
+  }else if (prueba$new_surface3_3[i]>prueba$new_surface4_4[i]) {
+    prueba$new_surfaceFinal[i] <- prueba$new_surface3_3[i]
+  }else if (prueba$new_surface4_4[i]>prueba$new_surface5_5[i]) {
+    prueba$new_surfaceFinal[i] <- prueba$new_surface4_4[i]
+  }else{
+    prueba$new_surfaceFinal[i] <- prueba$new_surface5_5[i]
+  }
+  
+}
+
+# mutate para actualizar la variable new_surfaceFinal -1 con NAs 
+prueba <- prueba%>%mutate(new_surfaceFinal = ifelse(new_surfaceFinal==-1,NA,new_surfaceFinal))
+  
+  
+
+
 
 
 
@@ -624,32 +842,5 @@ is.na(train$new_surface_def2)%>%table() #19360 NA
 
 
 
-### TRY CATCH
 
-tryCatch(               
-  
-  # Specifying expression
-  expr = {              
-    
-    
-    temp <- gsub(i,"",str_extract(string=houses_inter1$description[j], pattern=paste0(x1,i)))
-    
-    word2num("cuarenta y dos")
-    fine <- "FINE!!!"
-    print("Everything was fine.")
-  },
-  # Specifying error message
-  error = function(e){         
-    
-    print("There was an error message.")
-  },
-  
-  warning = function(w){      
-    print("There was a warning message.")
-  },
-  
-  finally = {            
-    print("finally Executed")
-  }
-)
 

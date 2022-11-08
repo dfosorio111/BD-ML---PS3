@@ -109,4 +109,3 @@ word2num <- function(word){
 
 
 word2num("ciento tres")
-
