@@ -281,3 +281,6 @@ houses_Cali <- house_def_cal[,(names(house_def_cal) %in% lista_definitivas)]
 #Exportar la base
 write_rds(houses_Cali,"BaseCali.rds")
 
+cali <- readRDS("Censo/BaseCali.rds")
+
+sapply(cali, function(y) sum(length(which(is.na(y)))))
