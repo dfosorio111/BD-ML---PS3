@@ -199,7 +199,7 @@ lista_amenities_cal <- list("bank", "bus_station", "casino", "childcare", "cinem
                          "kindergarten", "library", "love_hotel", "marketplace", "monastery",
                          "parking", "police", "restaurant")
 
-### EJEMPLO
+### MEDELLÍN
 
 med_houses_sp <- med_houses%>%st_buffer(300)%>%as_Spatial()
 
@@ -804,5 +804,613 @@ med_houses_2 <- med_houses %>% select(property_id, bank, bus_station, casino, ch
 write_rds(med_houses_2, "med_houses_2.RDS")
 
 write_csv(med_houses_2, "med_houses_2.csv")
+
+
+### Cali
+
+cali_houses_sp <- cali_houses%>%st_buffer(300)%>%as_Spatial()
+
+cali_houses_nb <- poly2nb(pl=cali_houses_sp, queen= TRUE)
+
+cali_houses$num_vecinos <- NA
+cali_houses$val_vecinos <- NA
+
+for (i in 1:length(cali_houses_nb)) {
+  
+  cali_houses$num_vecinos[i] <- size_sum(cali_houses_nb[[i]])
+  cali_houses$val_vecinos[i] <- cali_houses_nb[[i]]==0
+  
+}
+
+cali_houses <- cali_houses %>% mutate(vecinos_final = ifelse(val_vecinos == TRUE, 0, as.numeric(gsub(".*?([0-9]+).*", "\\1", num_vecinos)))) 
+
+drop <- c("num_vecinos", "val_vecinos")
+cali_houses <- cali_houses[,!names(cali_houses)%in%drop]
+
+# Bancos
+
+cali_houses <- bind_rows(cali_houses, osm_bank_Cali_sf%>%dplyr::select(osm_id,amenity))
+
+cali_houses_sp <- cali_houses%>%st_buffer(300)%>%as_Spatial()
+
+cali_houses_nb <- poly2nb(pl=cali_houses_sp, queen= TRUE)
+
+cali_houses$num_bank <- NA
+cali_houses$val_bank <- NA
+
+for (i in 1:length(cali_houses_nb)) {
+  
+  cali_houses$num_bank[i] <- size_sum(cali_houses_nb[[i]])
+  cali_houses$val_bank[i] <- cali_houses_nb[[i]]==0
+  
+}
+
+cali_houses <- cali_houses %>% mutate(bank_final = ifelse(val_bank == TRUE, 0, as.numeric(gsub(".*?([0-9]+).*", "\\1", num_bank)))) 
+
+drop <- c("num_bank", "val_bank")
+cali_houses <- cali_houses[,!names(cali_houses)%in%drop]
+
+cali_houses <- cali_houses %>% mutate(bank = bank_final - vecinos_final) 
+
+# Bus Station
+
+cali_houses <- bind_rows(cali_houses, osm_bus_station_Cali_sf%>%dplyr::select(osm_id,amenity))
+
+cali_houses_sp <- cali_houses%>%st_buffer(300)%>%as_Spatial()
+
+cali_houses_nb <- poly2nb(pl=cali_houses_sp, queen= TRUE)
+
+cali_houses$num_bus_station <- NA
+cali_houses$val_bus_station <- NA
+
+for (i in 1:length(cali_houses_nb)) {
+  
+  cali_houses$num_bus_station[i] <- size_sum(cali_houses_nb[[i]])
+  cali_houses$val_bus_station[i] <- cali_houses_nb[[i]]==0
+  
+}
+
+cali_houses <- cali_houses %>% mutate(bus_station_final = ifelse(val_bus_station == TRUE, 0, as.numeric(gsub(".*?([0-9]+).*", "\\1", num_bus_station)))) 
+
+drop <- c("num_bus_station", "val_bus_station")
+cali_houses <- cali_houses[,!names(cali_houses)%in%drop]
+
+cali_houses <- cali_houses %>% mutate(bus_station = bus_station_final - vecinos_final) 
+
+# Casino
+
+cali_houses <- bind_rows(cali_houses, osm_casino_Cali_sf%>%dplyr::select(osm_id,amenity))
+
+cali_houses_sp <- cali_houses%>%st_buffer(300)%>%as_Spatial()
+
+cali_houses_nb <- poly2nb(pl=cali_houses_sp, queen= TRUE)
+
+cali_houses$num_casino <- NA
+cali_houses$val_casino <- NA
+
+for (i in 1:length(cali_houses_nb)) {
+  
+  cali_houses$num_casino[i] <- size_sum(cali_houses_nb[[i]])
+  cali_houses$val_casino[i] <- cali_houses_nb[[i]]==0
+  
+}
+
+cali_houses <- cali_houses %>% mutate(casino_final = ifelse(val_casino == TRUE, 0, as.numeric(gsub(".*?([0-9]+).*", "\\1", num_casino)))) 
+
+drop <- c("num_casino", "val_casino")
+cali_houses <- cali_houses[,!names(cali_houses)%in%drop]
+
+cali_houses <- cali_houses %>% mutate(casino = casino_final - vecinos_final) 
+
+
+# Childcare
+
+cali_houses <- bind_rows(cali_houses, osm_childcare_Cali_sf%>%dplyr::select(osm_id,amenity))
+
+cali_houses_sp <- cali_houses%>%st_buffer(300)%>%as_Spatial()
+
+cali_houses_nb <- poly2nb(pl=cali_houses_sp, queen= TRUE)
+
+cali_houses$num_childcare <- NA
+cali_houses$val_childcare <- NA
+
+for (i in 1:length(cali_houses_nb)) {
+  
+  cali_houses$num_childcare[i] <- size_sum(cali_houses_nb[[i]])
+  cali_houses$val_childcare[i] <- cali_houses_nb[[i]]==0
+  
+}
+
+cali_houses <- cali_houses %>% mutate(childcare_final = ifelse(val_childcare == TRUE, 0, as.numeric(gsub(".*?([0-9]+).*", "\\1", num_childcare)))) 
+
+drop <- c("num_childcare", "val_childcare")
+cali_houses <- cali_houses[,!names(cali_houses)%in%drop]
+
+cali_houses <- cali_houses %>% mutate(childcare = childcare_final - vecinos_final) 
+
+
+# Cinema
+
+cali_houses <- bind_rows(cali_houses, osm_cinema_Cali_sf%>%dplyr::select(osm_id,amenity))
+
+cali_houses_sp <- cali_houses%>%st_buffer(300)%>%as_Spatial()
+
+cali_houses_nb <- poly2nb(pl=cali_houses_sp, queen= TRUE)
+
+cali_houses$num_cinema <- NA
+cali_houses$val_cinema <- NA
+
+for (i in 1:length(cali_houses_nb)) {
+  
+  cali_houses$num_cinema[i] <- size_sum(cali_houses_nb[[i]])
+  cali_houses$val_cinema[i] <- cali_houses_nb[[i]]==0
+  
+}
+
+cali_houses <- cali_houses %>% mutate(cinema_final = ifelse(val_cinema == TRUE, 0, as.numeric(gsub(".*?([0-9]+).*", "\\1", num_cinema)))) 
+
+drop <- c("num_cinema", "val_cinema")
+cali_houses <- cali_houses[,!names(cali_houses)%in%drop]
+
+cali_houses <- cali_houses %>% mutate(cinema = cinema_final - vecinos_final) 
+
+
+# clinic
+
+cali_houses <- bind_rows(cali_houses, osm_clinic_Cali_sf%>%dplyr::select(osm_id,amenity))
+
+cali_houses_sp <- cali_houses%>%st_buffer(300)%>%as_Spatial()
+
+cali_houses_nb <- poly2nb(pl=cali_houses_sp, queen= TRUE)
+
+cali_houses$num_clinic <- NA
+cali_houses$val_clinic <- NA
+
+for (i in 1:length(cali_houses_nb)) {
+  
+  cali_houses$num_clinic[i] <- size_sum(cali_houses_nb[[i]])
+  cali_houses$val_clinic[i] <- cali_houses_nb[[i]]==0
+  
+}
+
+cali_houses <- cali_houses %>% mutate(clinic_final = ifelse(val_clinic == TRUE, 0, as.numeric(gsub(".*?([0-9]+).*", "\\1", num_clinic)))) 
+
+drop <- c("num_clinic", "val_clinic")
+cali_houses <- cali_houses[,!names(cali_houses)%in%drop]
+
+cali_houses <- cali_houses %>% mutate(clinic = clinic_final - vecinos_final) 
+
+
+# college
+
+cali_houses <- bind_rows(cali_houses, osm_college_Cali_sf%>%dplyr::select(osm_id,amenity))
+
+cali_houses_sp <- cali_houses%>%st_buffer(300)%>%as_Spatial()
+
+cali_houses_nb <- poly2nb(pl=cali_houses_sp, queen= TRUE)
+
+cali_houses$num_college <- NA
+cali_houses$val_college <- NA
+
+for (i in 1:length(cali_houses_nb)) {
+  
+  cali_houses$num_college[i] <- size_sum(cali_houses_nb[[i]])
+  cali_houses$val_college[i] <- cali_houses_nb[[i]]==0
+  
+}
+
+cali_houses <- cali_houses %>% mutate(college_final = ifelse(val_college == TRUE, 0, as.numeric(gsub(".*?([0-9]+).*", "\\1", num_college)))) 
+
+drop <- c("num_college", "val_college")
+cali_houses <- cali_houses[,!names(cali_houses)%in%drop]
+
+cali_houses <- cali_houses %>% mutate(college = college_final - vecinos_final) 
+
+
+# community_centre
+
+cali_houses <- bind_rows(cali_houses, osm_community_centre_Cali_sf%>%dplyr::select(osm_id,amenity))
+
+cali_houses_sp <- cali_houses%>%st_buffer(300)%>%as_Spatial()
+
+cali_houses_nb <- poly2nb(pl=cali_houses_sp, queen= TRUE)
+
+cali_houses$num_community_centre <- NA
+cali_houses$val_community_centre <- NA
+
+for (i in 1:length(cali_houses_nb)) {
+  
+  cali_houses$num_community_centre[i] <- size_sum(cali_houses_nb[[i]])
+  cali_houses$val_community_centre[i] <- cali_houses_nb[[i]]==0
+  
+}
+
+cali_houses <- cali_houses %>% mutate(community_centre_final = ifelse(val_community_centre == TRUE, 0, as.numeric(gsub(".*?([0-9]+).*", "\\1", num_community_centre)))) 
+
+drop <- c("num_community_centre", "val_community_centre")
+cali_houses <- cali_houses[,!names(cali_houses)%in%drop]
+
+cali_houses <- cali_houses %>% mutate(community_centre = community_centre_final - vecinos_final) 
+
+
+
+# conference_centre
+
+cali_houses <- bind_rows(cali_houses, osm_conference_centre_Cali_sf%>%dplyr::select(osm_id,amenity))
+
+cali_houses_sp <- cali_houses%>%st_buffer(300)%>%as_Spatial()
+
+cali_houses_nb <- poly2nb(pl=cali_houses_sp, queen= TRUE)
+
+cali_houses$num_conference_centre <- NA
+cali_houses$val_conference_centre <- NA
+
+for (i in 1:length(cali_houses_nb)) {
+  
+  cali_houses$num_conference_centre[i] <- size_sum(cali_houses_nb[[i]])
+  cali_houses$val_conference_centre[i] <- cali_houses_nb[[i]]==0
+  
+}
+
+cali_houses <- cali_houses %>% mutate(conference_centre_final = ifelse(val_conference_centre == TRUE, 0, as.numeric(gsub(".*?([0-9]+).*", "\\1", num_conference_centre)))) 
+
+drop <- c("num_conference_centre", "val_conference_centre")
+cali_houses <- cali_houses[,!names(cali_houses)%in%drop]
+
+cali_houses <- cali_houses %>% mutate(conference_centre = conference_centre_final - vecinos_final) 
+
+
+
+# dentist
+
+cali_houses <- bind_rows(cali_houses, osm_dentist_Cali_sf%>%dplyr::select(osm_id,amenity))
+
+cali_houses_sp <- cali_houses%>%st_buffer(300)%>%as_Spatial()
+
+cali_houses_nb <- poly2nb(pl=cali_houses_sp, queen= TRUE)
+
+cali_houses$num_dentist <- NA
+cali_houses$val_dentist <- NA
+
+for (i in 1:length(cali_houses_nb)) {
+  
+  cali_houses$num_dentist[i] <- size_sum(cali_houses_nb[[i]])
+  cali_houses$val_dentist[i] <- cali_houses_nb[[i]]==0
+  
+}
+
+cali_houses <- cali_houses %>% mutate(dentist_final = ifelse(val_dentist == TRUE, 0, as.numeric(gsub(".*?([0-9]+).*", "\\1", num_dentist)))) 
+
+drop <- c("num_dentist", "val_dentist")
+cali_houses <- cali_houses[,!names(cali_houses)%in%drop]
+
+cali_houses <- cali_houses %>% mutate(dentist = dentist_final - vecinos_final) 
+
+
+# doctors
+
+cali_houses <- bind_rows(cali_houses, osm_doctors_Cali_sf%>%dplyr::select(osm_id,amenity))
+
+cali_houses_sp <- cali_houses%>%st_buffer(300)%>%as_Spatial()
+
+cali_houses_nb <- poly2nb(pl=cali_houses_sp, queen= TRUE)
+
+cali_houses$num_doctors <- NA
+cali_houses$val_doctors <- NA
+
+for (i in 1:length(cali_houses_nb)) {
+  
+  cali_houses$num_doctors[i] <- size_sum(cali_houses_nb[[i]])
+  cali_houses$val_doctors[i] <- cali_houses_nb[[i]]==0
+  
+}
+
+cali_houses <- cali_houses %>% mutate(doctors_final = ifelse(val_doctors == TRUE, 0, as.numeric(gsub(".*?([0-9]+).*", "\\1", num_doctors)))) 
+
+drop <- c("num_doctors", "val_doctors")
+cali_houses <- cali_houses[,!names(cali_houses)%in%drop]
+
+cali_houses <- cali_houses %>% mutate(doctors = doctors_final - vecinos_final) 
+
+
+# events_venue
+
+cali_houses <- bind_rows(cali_houses, osm_events_venue_Cali_sf%>%dplyr::select(osm_id,amenity))
+
+cali_houses_sp <- cali_houses%>%st_buffer(300)%>%as_Spatial()
+
+cali_houses_nb <- poly2nb(pl=cali_houses_sp, queen= TRUE)
+
+cali_houses$num_events_venue <- NA
+cali_houses$val_events_venue <- NA
+
+for (i in 1:length(cali_houses_nb)) {
+  
+  cali_houses$num_events_venue[i] <- size_sum(cali_houses_nb[[i]])
+  cali_houses$val_events_venue[i] <- cali_houses_nb[[i]]==0
+  
+}
+
+cali_houses <- cali_houses %>% mutate(events_venue_final = ifelse(val_events_venue == TRUE, 0, as.numeric(gsub(".*?([0-9]+).*", "\\1", num_events_venue)))) 
+
+drop <- c("num_events_venue", "val_events_venue")
+cali_houses <- cali_houses[,!names(cali_houses)%in%drop]
+
+cali_houses <- cali_houses %>% mutate(events_venue = events_venue_final - vecinos_final) 
+
+
+# fast_food
+
+cali_houses <- bind_rows(cali_houses, osm_fast_food_Cali_sf%>%dplyr::select(osm_id,amenity))
+
+cali_houses_sp <- cali_houses%>%st_buffer(300)%>%as_Spatial()
+
+cali_houses_nb <- poly2nb(pl=cali_houses_sp, queen= TRUE)
+
+cali_houses$num_fast_food <- NA
+cali_houses$val_fast_food <- NA
+
+for (i in 1:length(cali_houses_nb)) {
+  
+  cali_houses$num_fast_food[i] <- size_sum(cali_houses_nb[[i]])
+  cali_houses$val_fast_food[i] <- cali_houses_nb[[i]]==0
+  
+}
+
+cali_houses <- cali_houses %>% mutate(fast_food_final = ifelse(val_fast_food == TRUE, 0, as.numeric(gsub(".*?([0-9]+).*", "\\1", num_fast_food)))) 
+
+drop <- c("num_fast_food", "val_fast_food")
+cali_houses <- cali_houses[,!names(cali_houses)%in%drop]
+
+cali_houses <- cali_houses %>% mutate(fast_food = fast_food_final - vecinos_final) 
+
+
+# hospital
+
+cali_houses <- bind_rows(cali_houses, osm_hospital_Cali_sf%>%dplyr::select(osm_id,amenity))
+
+cali_houses_sp <- cali_houses%>%st_buffer(300)%>%as_Spatial()
+
+cali_houses_nb <- poly2nb(pl=cali_houses_sp, queen= TRUE)
+
+cali_houses$num_hospital <- NA
+cali_houses$val_hospital <- NA
+
+for (i in 1:length(cali_houses_nb)) {
+  
+  cali_houses$num_hospital[i] <- size_sum(cali_houses_nb[[i]])
+  cali_houses$val_hospital[i] <- cali_houses_nb[[i]]==0
+  
+}
+
+cali_houses <- cali_houses %>% mutate(hospital_final = ifelse(val_hospital == TRUE, 0, as.numeric(gsub(".*?([0-9]+).*", "\\1", num_hospital)))) 
+
+drop <- c("num_hospital", "val_hospital")
+cali_houses <- cali_houses[,!names(cali_houses)%in%drop]
+
+cali_houses <- cali_houses %>% mutate(hospital = hospital_final - vecinos_final) 
+
+
+# kindergarten
+
+cali_houses <- bind_rows(cali_houses, osm_kindergarten_Cali_sf%>%dplyr::select(osm_id,amenity))
+
+cali_houses_sp <- cali_houses%>%st_buffer(300)%>%as_Spatial()
+
+cali_houses_nb <- poly2nb(pl=cali_houses_sp, queen= TRUE)
+
+cali_houses$num_kindergarten <- NA
+cali_houses$val_kindergarten <- NA
+
+for (i in 1:length(cali_houses_nb)) {
+  
+  cali_houses$num_kindergarten[i] <- size_sum(cali_houses_nb[[i]])
+  cali_houses$val_kindergarten[i] <- cali_houses_nb[[i]]==0
+  
+}
+
+cali_houses <- cali_houses %>% mutate(kindergarten_final = ifelse(val_kindergarten == TRUE, 0, as.numeric(gsub(".*?([0-9]+).*", "\\1", num_kindergarten)))) 
+
+drop <- c("num_kindergarten", "val_kindergarten")
+cali_houses <- cali_houses[,!names(cali_houses)%in%drop]
+
+cali_houses <- cali_houses %>% mutate(kindergarten = kindergarten_final - vecinos_final)
+
+
+# library
+
+cali_houses <- bind_rows(cali_houses, osm_library_Cali_sf%>%dplyr::select(osm_id,amenity))
+
+cali_houses_sp <- cali_houses%>%st_buffer(300)%>%as_Spatial()
+
+cali_houses_nb <- poly2nb(pl=cali_houses_sp, queen= TRUE)
+
+cali_houses$num_library <- NA
+cali_houses$val_library <- NA
+
+for (i in 1:length(cali_houses_nb)) {
+  
+  cali_houses$num_library[i] <- size_sum(cali_houses_nb[[i]])
+  cali_houses$val_library[i] <- cali_houses_nb[[i]]==0
+  
+}
+
+cali_houses <- cali_houses %>% mutate(library_final = ifelse(val_library == TRUE, 0, as.numeric(gsub(".*?([0-9]+).*", "\\1", num_library)))) 
+
+drop <- c("num_library", "val_library")
+cali_houses <- cali_houses[,!names(cali_houses)%in%drop]
+
+cali_houses <- cali_houses %>% mutate(library = library_final - vecinos_final) 
+
+
+
+# love_hotel
+
+cali_houses <- bind_rows(cali_houses, osm_love_hotel_Cali_sf%>%dplyr::select(osm_id,amenity))
+
+cali_houses_sp <- cali_houses%>%st_buffer(300)%>%as_Spatial()
+
+cali_houses_nb <- poly2nb(pl=cali_houses_sp, queen= TRUE)
+
+cali_houses$num_love_hotel <- NA
+cali_houses$val_love_hotel <- NA
+
+for (i in 1:length(cali_houses_nb)) {
+  
+  cali_houses$num_love_hotel[i] <- size_sum(cali_houses_nb[[i]])
+  cali_houses$val_love_hotel[i] <- cali_houses_nb[[i]]==0
+  
+}
+
+cali_houses <- cali_houses %>% mutate(love_hotel_final = ifelse(val_love_hotel == TRUE, 0, as.numeric(gsub(".*?([0-9]+).*", "\\1", num_love_hotel)))) 
+
+drop <- c("num_love_hotel", "val_love_hotel")
+cali_houses <- cali_houses[,!names(cali_houses)%in%drop]
+
+cali_houses <- cali_houses %>% mutate(love_hotel = love_hotel_final - vecinos_final) 
+
+
+# marketplace
+
+cali_houses <- bind_rows(cali_houses, osm_marketplace_Cali_sf%>%dplyr::select(osm_id,amenity))
+
+cali_houses_sp <- cali_houses%>%st_buffer(300)%>%as_Spatial()
+
+cali_houses_nb <- poly2nb(pl=cali_houses_sp, queen= TRUE)
+
+cali_houses$num_marketplace <- NA
+cali_houses$val_marketplace <- NA
+
+for (i in 1:length(cali_houses_nb)) {
+  
+  cali_houses$num_marketplace[i] <- size_sum(cali_houses_nb[[i]])
+  cali_houses$val_marketplace[i] <- cali_houses_nb[[i]]==0
+  
+}
+
+cali_houses <- cali_houses %>% mutate(marketplace_final = ifelse(val_marketplace == TRUE, 0, as.numeric(gsub(".*?([0-9]+).*", "\\1", num_marketplace)))) 
+
+drop <- c("num_marketplace", "val_marketplace")
+cali_houses <- cali_houses[,!names(cali_houses)%in%drop]
+
+cali_houses <- cali_houses %>% mutate(marketplace = marketplace_final - vecinos_final) 
+
+
+
+# monastery
+
+cali_houses <- bind_rows(cali_houses, osm_monastery_Cali_sf%>%dplyr::select(osm_id,amenity))
+
+cali_houses_sp <- cali_houses%>%st_buffer(300)%>%as_Spatial()
+
+cali_houses_nb <- poly2nb(pl=cali_houses_sp, queen= TRUE)
+
+cali_houses$num_monastery <- NA
+cali_houses$val_monastery <- NA
+
+for (i in 1:length(cali_houses_nb)) {
+  
+  cali_houses$num_monastery[i] <- size_sum(cali_houses_nb[[i]])
+  cali_houses$val_monastery[i] <- cali_houses_nb[[i]]==0
+  
+}
+
+cali_houses <- cali_houses %>% mutate(monastery_final = ifelse(val_monastery == TRUE, 0, as.numeric(gsub(".*?([0-9]+).*", "\\1", num_monastery)))) 
+
+drop <- c("num_monastery", "val_monastery")
+cali_houses <- cali_houses[,!names(cali_houses)%in%drop]
+
+cali_houses <- cali_houses %>% mutate(monastery = monastery_final - vecinos_final) 
+
+
+# parking
+
+cali_houses <- bind_rows(cali_houses, osm_parking_Cali_sf%>%dplyr::select(osm_id,amenity))
+
+cali_houses_sp <- cali_houses%>%st_buffer(300)%>%as_Spatial()
+
+cali_houses_nb <- poly2nb(pl=cali_houses_sp, queen= TRUE)
+
+cali_houses$num_parking <- NA
+cali_houses$val_parking <- NA
+
+for (i in 1:length(cali_houses_nb)) {
+  
+  cali_houses$num_parking[i] <- size_sum(cali_houses_nb[[i]])
+  cali_houses$val_parking[i] <- cali_houses_nb[[i]]==0
+  
+}
+
+cali_houses <- cali_houses %>% mutate(parking_final = ifelse(val_parking == TRUE, 0, as.numeric(gsub(".*?([0-9]+).*", "\\1", num_parking)))) 
+
+drop <- c("num_parking", "val_parking")
+cali_houses <- cali_houses[,!names(cali_houses)%in%drop]
+
+cali_houses <- cali_houses %>% mutate(parking = parking_final - vecinos_final) 
+
+
+# police
+
+cali_houses <- bind_rows(cali_houses, osm_police_Cali_sf%>%dplyr::select(osm_id,amenity))
+
+cali_houses_sp <- cali_houses%>%st_buffer(300)%>%as_Spatial()
+
+cali_houses_nb <- poly2nb(pl=cali_houses_sp, queen= TRUE)
+
+cali_houses$num_police <- NA
+cali_houses$val_police <- NA
+
+for (i in 1:length(cali_houses_nb)) {
+  
+  cali_houses$num_police[i] <- size_sum(cali_houses_nb[[i]])
+  cali_houses$val_police[i] <- cali_houses_nb[[i]]==0
+  
+}
+
+cali_houses <- cali_houses %>% mutate(police_final = ifelse(val_police == TRUE, 0, as.numeric(gsub(".*?([0-9]+).*", "\\1", num_police)))) 
+
+drop <- c("num_police", "val_police")
+cali_houses <- cali_houses[,!names(cali_houses)%in%drop]
+
+cali_houses <- cali_houses %>% mutate(police = police_final - vecinos_final) 
+
+
+# restaurant
+
+cali_houses <- bind_rows(cali_houses, osm_restaurant_Cali_sf%>%dplyr::select(osm_id,amenity))
+
+cali_houses_sp <- cali_houses%>%st_buffer(300)%>%as_Spatial()
+
+cali_houses_nb <- poly2nb(pl=cali_houses_sp, queen= TRUE)
+
+cali_houses$num_restaurant <- NA
+cali_houses$val_restaurant <- NA
+
+for (i in 1:length(cali_houses_nb)) {
+  
+  cali_houses$num_restaurant[i] <- size_sum(cali_houses_nb[[i]])
+  cali_houses$val_restaurant[i] <- cali_houses_nb[[i]]==0
+  
+}
+
+cali_houses <- cali_houses %>% mutate(restaurant_final = ifelse(val_restaurant == TRUE, 0, as.numeric(gsub(".*?([0-9]+).*", "\\1", num_restaurant)))) 
+
+drop <- c("num_restaurant", "val_restaurant")
+cali_houses <- cali_houses[,!names(cali_houses)%in%drop]
+
+cali_houses <- cali_houses %>% mutate(restaurant = restaurant_final - vecinos_final) 
+
+write_rds(cali_houses, "cali_houses_1.RDS")
+
+cali_houses_2 <- cali_houses %>% select(property_id, bank, bus_station, casino, childcare, cinema,
+                                      clinic, college, community_centre, conference_centre, dentist, 
+                                      doctors, events_venue, fast_food, hospital,
+                                      kindergarten, library, love_hotel, marketplace, monastery,
+                                      parking, police, restaurant)
+
+write_rds(cali_houses_2, "cali_houses_2.RDS")
+
+write_csv(cali_houses_2, "cali_houses_2.csv")
+
 
 
