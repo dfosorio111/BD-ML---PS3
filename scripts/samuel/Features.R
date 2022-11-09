@@ -94,7 +94,16 @@ lanes
 ## Pintar las estaciones de autobus
 #leaflet() %>% addTiles() %>% addCircleMarkers(data=bus_station , col="red")
 
+curl_setopt($curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1)
 
+bog_roads <- (bbox = getbb("Bogotá Colombia")) %>%
+  opq() %>%
+  add_osm_feature("highway",
+                  c("road",
+                    "busway",
+                    "primary", 
+                    "secondary")) %>%
+  osmdata_sf()
 ## objeto osm
 osm = opq(bbox = getbb("Cali Colombia")) %>%
   add_osm_feature(key="amenity" , value="bus_station") 
@@ -234,3 +243,216 @@ min_dist_arts_centre_bog <- apply(matrix_dist_arts_centre_bog , 1 , min)
 min_dist_arts_centre_bog %>% head()
 
 house_chapi$arts_centre_bog = min_dist_arts_centre_bog
+
+
+### **5.5. Distancia a amenities**
+## Calcular Distancia a muchos polygonos
+
+# Importar datos
+
+setwd("~/Desktop/Big Data/Repositorios/BD-ML---PS3/scripts/diego/data")
+
+amenities_bogota <- read_rds("amenities_bogota.RDS")
+
+osm_arts_centre_Medellin <- read_rds("osm_arts_centre_Medellin_sf.RDS")
+
+osm_bank_Cali <- read_rds("osm_bank_Cali_sf.RDS")
+
+osm_bank_Medellin <- read_rds("osm_bank_Medellin_sf.RDS")
+
+osm_bicycle_parking_Medellin <- read_rds("osm_bicycle_parking_Medellin_sf.RDS")
+
+osm_bus_station_Cali <- read_rds("osm_bus_station_Cali_sf.RDS")
+
+osm_bus_station_Medellin <- read_rds("osm_bus_station_Medellin_sf.RDS")
+
+osm_casino_Cali <- read_rds("osm_casino_Cali_sf.RDS")
+
+osm_casino_Medellin <- read_rds("osm_casino_Medellin_sf.RDS")
+
+osm_childcare_Cali <- read_rds("osm_childcare_Cali_sf.RDS")
+
+osm_childcare_Medellin <- read_rds("osm_childcare_Medellin_sf.RDS")
+
+osm_cinema_Cali_sf   <- read_rds("osm_cinema_Cali_sf.RDS")
+
+osm_cinema_Medellin_sf   <- read_rds("osm_cinema_Medellin_sf.RDS")
+  
+osm_clinic_Cali_sf   <- read_rds("osm_clinic_Cali_sf.RDS")
+
+osm_clinic_Medellin_sf    <- read_rds("osm_clinic_Medellin_sf.RDS")
+       
+osm_college_Cali_sf     <- read_rds("osm_college_Cali_sf.RDS")
+
+osm_college_Medellin_sf  <- read_rds("osm_college_Medellin_sf.RDS")
+
+osm_community_centre_Cali_sf   <- read_rds("osm_community_centre_Cali_sf.RDS")
+
+osm_community_centre_Medellin_sf <- read_rds("osm_community_centre_Medellin_sf.RDS")
+
+osm_conference_centre_Cali_sf <- read_rds("osm_conference_centre_Cali_sf.RDS")
+
+osm_conference_centre_Medellin_sf  <- read_rds("osm_conference_centre_Medellin_sf.RDS")
+
+osm_dentist_Cali_sf      <- read_rds("osm_dentist_Cali_sf.RDS")
+
+osm_dentist_Medellin_sf <- read_rds("osm_dentist_Medellin_sf.RDS")
+
+osm_doctors_Cali_sf  <- read_rds("osm_doctors_Cali_sf.RDS")
+
+osm_doctors_Medellin_sf   <- read_rds("osm_doctors_Medellin_sf.RDS")
+
+osm_events_venue_Cali_sf    <- read_rds("osm_events_venue_Cali_sf.RDS")
+
+osm_events_venue_Medellin_sf  <- read_rds( "osm_events_venue_Medellin_sf.RDS")
+
+osm_fast_food_Cali_sf    <- read_rds("osm_fast_food_Cali_sf.RDS")
+
+osm_fast_food_Medellin_sf  <- read_rds("osm_fast_food_Medellin_sf.RDS")
+
+osm_hospital_Cali_sf  <- read_rds("osm_hospital_Cali_sf.RDS")
+
+osm_hospital_Medellin_sf   <- read_rds("osm_hospital_Medellin_sf.RDS")
+
+osm_kindergarten_Cali_sf  <- read_rds("osm_kindergarten_Cali_sf.RDS")
+
+osm_kindergarten_Medellin_sf   <- read_rds("osm_kindergarten_Medellin_sf.RDS")
+
+osm_library_Cali_sf  <- read_rds(   "osm_library_Cali_sf.RDS")
+
+osm_library_Medellin_sf   <- read_rds("osm_library_Medellin_sf.RDS")
+
+osm_love_hotel_Cali_sf <- read_rds("osm_love_hotel_Cali_sf.RDS")
+
+osm_love_hotel_Medellin_sf   <- read_rds("osm_love_hotel_Medellin_sf.RDS")
+      
+osm_marketplace_Cali_sf   <- read_rds( "osm_marketplace_Cali_sf.RDS")
+
+osm_marketplace_Medellin_sf  <- read_rds( "osm_marketplace_Medellin_sf.RDS")
+
+osm_monastery_Cali_sf   <- read_rds("osm_monastery_Cali_sf.RDS")
+
+osm_monastery_Medellin_sf   <- read_rds("osm_monastery_Medellin_sf.RDS")
+
+osm_parking_Cali_sf   <- read_rds("osm_parking_Cali_sf.RDS")
+
+osm_parking_Medellin_sf    <- read_rds("osm_parking_Medellin_sf.RDS")
+
+osm_pharmacy_Medellin_sf   <- read_rds(   "osm_pharmacy_Medellin_sf.RDS")
+
+osm_place_of_worship_Medellin_sf <- read_rds("osm_place_of_worship_Medellin_sf.RDS")
+            
+osm_police_Cali_sf  <- read_rds(   "osm_police_Cali_sf.RDS")   
+
+osm_police_Medellin_sf   <- read_rds("osm_police_Medellin_sf.RDS")
+
+osm_post_office_Medellin_sf    <- read_rds("osm_post_office_Medellin_sf.RDS")
+
+osm_recycling_Medellin_sf  <- read_rds( "osm_recycling_Medellin_sf.RDS")
+
+osm_restaurant_Cali_sf  <- read_rds(   "osm_restaurant_Cali_sf.RDS")
+
+osm_restaurant_Medellin_sf   <- read_rds("osm_restaurant_Medellin_sf.RDS")
+      
+osm_school_Medellin_sf   <- read_rds(  "osm_school_Medellin_sf.RDS")
+ 
+osm_social_facility_Medellin_sf  <- read_rds("osm_social_facility_Medellin_sf.RDS")
+       
+osm_theatre_Medellin_sf  <- read_rds( "osm_theatre_Medellin_sf.RDS")
+
+osm_university_Medellin_sf    <- read_rds(   "osm_university_Medellin_sf.RDS")
+      
+osm_veterinary_Medellin_sf   <- read_rds(  "osm_veterinary_Medellin_sf.RDS")
+
+submission_template.csv <- read_csv("submission_template.csv")
+
+test    <- read_rds(     "test.Rds" )      
+
+train <- read_rds("train.Rds")
+
+## convetir DataFrame de casas en datos de entrenamiento a sf
+
+train_house <- st_as_sf(x = train, ## datos
+                        coords=c("lon","lat"), ## coordenadas
+                        crs=4326) ## CRS
+
+test_house <- st_as_sf(x = test, ## datos
+                        coords=c("lon","lat"), ## coordenadas
+                        crs=4326) ## CRS
+
+## Distancia a amenities
+
+houses_medellin <- train_house %>% subset(city== "Medellín")
+
+# arts_centre
+matrix_dist_arts_centre_med <- st_distance(x=houses_medellin  , y=osm_arts_centre_Medellin)
+
+min_dist_arts_centre_med <- apply(matrix_dist_arts_centre_med , 1 , min)
+
+houses_medellin$arts_centre_med = min_dist_arts_centre_med
+
+# bank
+
+matrix_dist_bank_med <- st_distance(x=houses_medellin  , y=osm_bank_Medellin)
+
+min_dist_bank_med <- apply(matrix_dist_bank_med , 1 , min)
+
+houses_medellin$bank_med = min_dist_bank_med
+
+matrix_dist_bank_cali <- st_distance(x=test_house  , y=osm_bank_Cali)
+
+min_dist_bank_cali <- apply(matrix_dist_bank_cali , 1 , min)
+
+test_house$bank_cali = min_dist_bank_cali
+
+# bicycle
+
+matrix_dist_bicycle_med <- st_distance(x=houses_medellin  , y=osm_bicycle_parking_Medellin)
+
+min_dist_bicycle_med <- apply(matrix_dist_bicycle_med , 1 , min)
+
+houses_medellin$bicycle_med = min_dist_bicycle_med
+
+# bus station
+
+matrix_dist_bus_med <- st_distance(x=houses_medellin  , y=osm_bus_station_Medellin)
+
+min_dist_bus_med <- apply(matrix_dist_bus_med , 1 , min)
+
+houses_medellin$bicycle_med = min_dist_bus_med
+
+matrix_dist_bus_cali <- st_distance(x=test_house  , y=osm_bus_station_Cali)
+
+min_dist_bus_cali <- apply(matrix_dist_bus_cali , 1 , min)
+
+test_house$bus_cali = min_dist_bus_cali
+
+# casino
+
+matrix_dist_casino_med <- st_distance(x=houses_medellin  , y=osm_casino_Medellin)
+
+min_dist_casino_med <- apply(matrix_dist_casino_med , 1 , min)
+
+houses_medellin$casino_med = min_dist_casino_med
+
+matrix_dist_casino_cali <- st_distance(x=test_house  , y=osm_casino_Cali)
+
+min_dist_casino_cali <- apply(matrix_dist_casino_cali , 1 , min)
+
+test_house$casino_cali = min_dist_casino_cali
+
+# childcare
+
+matrix_dist_childcare_med <- st_distance(x=houses_medellin  , y=osm_childcare_Medellin)
+
+min_dist_childcare_med <- apply(matrix_dist_childcare_med , 1 , min)
+
+houses_medellin$childcare_med = min_dist_childcare_med
+
+matrix_dist_childcare_cali <- st_distance(x=test_house  , y=osm_childcare_Cali)
+
+min_dist_childcare_cali <- apply(matrix_dist_childcare_cali , 1 , min)
+
+test_house$childcare_cali = min_dist_childcare_cali
+
+
