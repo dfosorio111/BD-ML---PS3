@@ -6297,7 +6297,21 @@ write_rds(bog_houses_8_2, "bog_houses_8_2.RDS")
 
 write_csv(bog_houses_8_2, "bog_houses_8_2.csv")
 
-bog
+bog_houses_1_2_f <- bog_houses_1_2 %>% subset(is.na(property_id)==FALSE)
+bog_houses_2_2_f <- bog_houses_2_2 %>% subset(is.na(property_id)==FALSE)
+bog_houses_3_2_f <- bog_houses_3_2 %>% subset(is.na(property_id)==FALSE)
+bog_houses_4_2_f <- bog_houses_4_2 %>% subset(is.na(property_id)==FALSE)
+bog_houses_5_2_f <- bog_houses_5_2 %>% subset(is.na(property_id)==FALSE)
+bog_houses_6_2_f <- bog_houses_6_2 %>% subset(is.na(property_id)==FALSE)
+bog_houses_7_2_f <- bog_houses_7_2 %>% subset(is.na(property_id)==FALSE)
+bog_houses_8_2_f <- bog_houses_8_2 %>% subset(is.na(property_id)==FALSE)
 
-bogota_am <- rbind(bog_houses_1_2, bog_houses_2_2)
+bogota_am <- rbind(bog_houses_1_2_f, bog_houses_2_2_f,
+                   bog_houses_3_2_f, bog_houses_4_2_f,
+                   bog_houses_5_2_f, bog_houses_6_2_f,
+                   bog_houses_7_2_f, bog_houses_8_2_f)
+
+write_rds(bogota_am, "bog_am.RDS")
+
+write_csv(bogota_am, "bog_am.csv")
 
