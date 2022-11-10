@@ -161,6 +161,14 @@ x5 <- "[:word:]+"
 
 # BASE SAMPLE
 
+#Este es el directorio de Daniel
+setwd("C:/Users/danie/OneDrive/Escritorio/Uniandes/PEG/Big Data and Machine Learning/BD-ML---PS3/data")
+houses_inter1 <- readRDS("train.rds")
+BDT <- readrd("BaseGeografía.rds")
+
+
+BDT <- as.data.frame(BDT)
+
 prueba <- houses_inter1[1:1000,]
 
 
@@ -178,6 +186,8 @@ prueba$new_surface2_2 <- NA
 prueba$new_surface3_3 <- NA
 prueba$new_surface4_4 <- NA
 prueba$new_surface5_5 <- NA
+
+prueba$description <- tolower(prueba$description)
 
 # iterar por sufijos de 'metros'
 for (i in c( "metros", "m2","mt2", "m ","cuadrad","mtr", "mts",  "metrs", "meters","area", "área","espacio de")){

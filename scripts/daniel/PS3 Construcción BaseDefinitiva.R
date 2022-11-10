@@ -30,9 +30,13 @@ houses_completa <- readRDS("Censo/BaseCompleta.rds")
 #Se carga la base que tiene las bases de Medellín y Bogotá modificadas
 houses_completa2 <- readRDS("BogMed_sf.rds")
 
+#UPZ's de Bogotá
+bog <- read_rds("BogotáUPZ.rds")
+#Comunas de medellín
+med <- read_rds("MedellínComunas.rds")
+
 #Guardar solo las variables de "Final_"
-keep<- c("property_id", "Final_Bathrooms", 
-                       "Final_Metros", "bathrooms_knn", "geometry")
+keep<- c("property_id", "Final_Bathrooms", "Final_Metros", "bathrooms_knn", "geometry")
 
 #Guardar la base definitiva
 houses_completa2 <-houses_completa2[,(names(houses_completa2) %in% keep)]
@@ -62,7 +66,7 @@ houses_completa$Final_Metros_2[which(houses_completa$property_id == houses_compl
 
 
 #Exportar esta base
-write_rds(houses_completa, "BaseDefinitivaTrain")
+write_rds(houses_completa, "BaseDefinitivaTrain.rds")
 
 #Revisar el número de NA's
 sapply(houses_completa, function(y) sum(length(which(is.na(y)))))
@@ -85,20 +89,27 @@ sapply(houses_geography_def, function(y) sum(length(which(is.na(y)))))
 
 #Incluir las que faltaron de la original
 #Se carga la base que tiene las bases de Medellín y Bogotá modificadas
-houses_completa2 <- readRDS("BogMed_sf.rds")
+houses_completa3 <- readRDS("BogMed_sf.rds")
 class(houses_completa2)
 names(houses_completa2)
 names(houses_geography_def)
 
 houses_geography_def$description <- NA
 houses_geography_def$bathrooms <- NA
-houses_geography_def$description[which(houses_geography_def$property_id == houses_completa2$property_id)] <- houses_completa2$description[which(houses_geography_def$property_id == houses_completa2$property_id)]
-houses_geography_def$bathrooms[which(houses_geography_def$property_id == houses_completa2$property_id)] <- houses_completa2$bathrooms[which(houses_geography_def$property_id == houses_completa2$property_id)]
+houses_geography_def$description[which(houses_geography_def$property_id == houses_completa3$property_id)] <- houses_completa3$description[which(houses_geography_def$property_id == houses_completa3$property_id)]
+houses_geography_def$bathrooms[which(houses_geography_def$property_id == houses_completa3$property_id)] <- houses_completa3$bathrooms[which(houses_geography_def$property_id == houses_completa3$property_id)]
 
 
 class(houses_geography)
 
 
 #Exportar
-write_rds(houses_geography_def, "BaseGeografía.rds")
+write_rds(houses_geography_def, "TRAIN_REGEX_CENSO_GEOGRAFIA.rds")
 
+#Probar si la base carga:
+PROBANDO <- read_rds("TRAIN_REGEX_CENSO_GEOGRAFIA.rds")
+#ver cómo está de NA's
+sapply(PROBANDO, function(y) sum(length(which(is.na(y)))))
+
+#Cargar baase de cali con las mismas variables
+CALI <- read_rds("Censo/BaseCali.rds")
