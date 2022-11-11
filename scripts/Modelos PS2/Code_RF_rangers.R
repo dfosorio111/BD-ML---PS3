@@ -908,6 +908,7 @@ cm_test_tree2
 
 
 #Intento con lo de la web
+browseURL("https://bookdown.org/content/2031/ensambladores-random-forest-parte-ii.html#utilizando-la-libreria-ranger")
 
 hyper_grid <- expand.grid(
   mtry       = c(1,2),

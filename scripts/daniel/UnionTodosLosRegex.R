@@ -591,6 +591,7 @@ BogMed <- read_rds("BogMed_sf.rds")
 #Se crean las variables vacías
 train_def$metros_Def <- NA
 train_def$metros_Def2 <- NA
+#se hace el join manual
 train_def$metros_Def[which(train_def$property_id == BogMed$property_id)] <- BogMed$metros_Def[which(train_def$property_id == BogMed$property_id)]
 train_def$metros_Def2[which(train_def$property_id == BogMed$property_id)] <- BogMed$metros_Def2[which(train_def$property_id == BogMed$property_id)]
 
