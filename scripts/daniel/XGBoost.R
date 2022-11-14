@@ -295,11 +295,58 @@ xgboost <- train(
 write_rds(xgboost, "modelo_xgboost_custom.rds")
 
 
+#####################################################Modelo con métrica personalizada (2da versión)
+
+
+#Se construye la métrica personalizada
+custom_summary <- function(data, lev = NULL, model = NULL){
+  out = mean(ifelse(abs((exp(data[, "pred"])-exp(data[, "obs"]))/1000000) > 40, (exp(data[, "pred"])-exp(data[, "obs"]))^6,(exp(data[, "pred"])-exp(data[, "obs"])))) 
+  names(out) = c("anti_fiasco2")
+  out
+}
+
+
+####Se usa un control que incorpore la métrica
+ctrl <- trainControl(method = "cv",  
+                     number = 2,     
+                     summaryFunction = custom_summary)
+
+#Se construye la grilla
+grid_default <- expand.grid(nrounds = c(2000),
+                            max_depth = c(5, 10),
+                            eta = c(0.01, 0.05),
+                            gamma = c(0,1),
+                            min_child_weight = c(50,100),
+                            colsample_bytree = c(0.7),
+                            subsample = c(0.6))
+
+#Se corre el modelo
+#modelo
+set.seed(1410)
+xgboost <- train(
+  log_price ~ . ,
+  data = train,
+  method = "xgbTree",
+  trControl = ctrl,
+  metric = "anti_fiasco2",
+  tuneGrid = grid_default,
+  preProcess = c("center", "scale"),
+  maximize = FALSE
+)
+
+write_rds(xgboost, "modelo_xgboost_custom2.rds")
+
+
+
+
 #######################################################Predicciones
 
 
 write_rds(xgboost, "modelo_xgboost_con_1000.rds")
 mod_xgboost <- read_rds("modelo_xgboost_con_1000.rds")
+#Se cargan los modelos de regresión lineal y de EN
+model_lm <- read_rds("lin_reg.rds")
+model_EN <- read_rds("modelo_en.rds")
 
 
 
@@ -369,6 +416,9 @@ test2%>%subset(error_XG_1500>=(-40))%>%summarise(Presup = -sum(error_XG_1500))
 #Cargar el de 2000 árboles
 mod_xgboost_2000 <- read_rds("XGB_2000.rds")
 
+write_rds(xgboost, "modelo_xgboost_con_3000.rds")
+mod_xgboost <- read_rds("modelo_xgboost_con_3000.rds")
+
 ##########################################predict (con 2000 árboles)
 
 #Test
@@ -432,6 +482,41 @@ test2%>%mutate(no_compra = ifelse(error_XG_custom<(-40),1,0))%>%count(no_compra)
 #Presupuesto de las compras
 test2%>%subset(error_XG_custom>=(-40))%>%summarise(Presup = -sum(error_XG_custom))
 
+#Cargar el modelo con error personalizado
+mod_xgb_custom2 <- read_rds("modelo_xgboost_custom2.rds")
+
+##########################################predict (Customized 2)
+
+
+
+#Test
+pred_xgb_test2_custom2 <- predict(mod_xgb_custom2, test2)
+#Train
+pred_xgb_train2_custom2 <- predict(mod_xgb_custom2, train2)
+
+test2$predicciones_XG_custom2 <- exp(pred_xgb_test2_custom2)
+View(test2%>%dplyr::select(price, predicciones_XG_2000 ,predicciones_XG_custom2))
+
+#Se crea el error en pesos
+test2 <- test2%>%mutate(error_XG_custom2 = (predicciones_XG_custom2 - price)/1000000)%>%mutate(fun_error_XG_custom2 = ifelse(error_XG_custom2 > 0, error_XG_custom2^2,ifelse(error_XG_custom2<(-40),error_XG_custom2^6,error_XG_custom2)))
+View(test2%>%dplyr::select(price, predicciones_XG_custom2, error_XG_custom2, fun_error_XG_custom2))
+AVG_custom2 <- mean(test2$fun_error_XG_custom2)
+AVG_custom2 
+RMSE_custom2 <- sqrt(mean(test2$error_XG_custom2^2))
+RMSE_custom2
+MAE_custom2 <- mean(abs(test2$error_XG_custom2))
+MAE_custom2
+hist(test2$error_XG_custom2)
+
+quantile(test2$error_XG_custom2, probs = seq(0,1,0.01))
+
+#Cantidad de casas que no se compran
+test2%>%mutate(no_compra = ifelse(error_XG_custom2<(-40),1,0))%>%count(no_compra)%>%mutate(perc = 100*n/sum(n) )
+
+#Presupuesto de las compras
+test2%>%subset(error_XG_custom2>=(-40))%>%summarise(Presup = -sum(error_XG_custom2))
+
+
 
 ###########Modelos RF con Ranger
 model <- ranger(
@@ -447,8 +532,31 @@ model <- ranger(
 )
 
 
-write_rds(xgboost, "modelo_xgboost_con_3000.rds")
-mod_xgboost <- read_rds("modelo_xgboost_con_3000.rds")
+model2 <- ranger(
+  formula         = log_price ~ ., 
+  data            = train, 
+  num.trees       = 500,
+  mtry            = 9,
+  max.depth       = 10,
+  sample.fraction = 1,
+  min.node.size   = 50,
+  seed            = 123, # Notese el seteo de la semilla
+  #importance      = "impurity" 
+)
+
+
+model3 <- ranger(
+  formula         = log_price ~ ., 
+  data            = train, 
+  num.trees       = 2000,
+  mtry            = 9,
+  max.depth       = 10,
+  sample.fraction = 1,
+  min.node.size   = 50,
+  seed            = 123, # Notese el seteo de la semilla
+  #importance      = "impurity" 
+)
+
 
 
 
@@ -465,7 +573,7 @@ test2$predicciones_RF_200 <- exp(pred_RF_test2_200$predictions)
 View(test2%>%dplyr::select(price,predicciones_XG_2000, predicciones_RF_200))
 
 #Se crea el error en pesos
-test2 <- test2%>%mutate(error_RF_200 = (predicciones_RF_200 - price)/1000000)%>%mutate(fun_error_RF_200 = ifelse(error_RF_200 > 0, error_XG_2000^2,ifelse(error_RF_200<(-40),error_RF_200^6,error_RF_200)))
+test2 <- test2%>%mutate(error_RF_200 = (predicciones_RF_200 - price)/1000000)%>%mutate(fun_error_RF_200 = ifelse(error_RF_200 > 0, error_RF_200^2,ifelse(error_RF_200<(-40),error_RF_200^6,error_RF_200)))
 View(test2%>%dplyr::select(price, predicciones_RF_200, error_RF_200, fun_error_RF_200))
 AVG_200 <- mean(test2$fun_error_RF_200)
 AVG_200 
@@ -483,8 +591,214 @@ test2%>%mutate(no_compra = ifelse(error_RF_200<(-40),1,0))%>%count(no_compra)%>%
 #Presupuesto de las compras
 test2%>%subset(error_RF_200>=(-40))%>%summarise(Presup = -sum(error_RF_200))
 
+##########################################predict (RF 500)
+
+#Test
+pred_RF_test2_500 <- predict(model2, test2)
+#Train
+pred_RF_train2_500 <- predict(model2, train2)
+
+test2$predicciones_RF_500 <- exp(pred_RF_test2_500$predictions)
+View(test2%>%dplyr::select(price,predicciones_XG_2000, predicciones_RF_500))
+
+#Se crea el error en pesos
+test2 <- test2%>%mutate(error_RF_500 = (predicciones_RF_500 - price)/1000000)%>%mutate(fun_error_RF_500 = ifelse(error_RF_500 > 0, error_RF_500^2,ifelse(error_RF_500<(-40),error_RF_500^6,error_RF_500)))
+View(test2%>%dplyr::select(price, predicciones_RF_500, error_RF_500, fun_error_RF_500))
+AVG_500 <- mean(test2$fun_error_RF_500)
+AVG_500 
+RMSE_500 <- sqrt(mean(test2$error_RF_500^2))
+RMSE_500
+MAE_500 <- mean(abs(test2$error_RF_500))
+MAE_500
+hist(test2$error_RF_500)
+
+quantile(test2$error_RF_500, probs = seq(0,1,0.01))
+
+#Cantidad de casas que no se compran
+test2%>%mutate(no_compra = ifelse(error_RF_500<(-40),1,0))%>%count(no_compra)%>%mutate(perc = 100*n/sum(n) )
+
+#Presupuesto de las compras
+test2%>%subset(error_RF_500>=(-40))%>%summarise(Presup = -sum(error_RF_500))
 
 
+##########################################predict (RF 2000)
+
+#Test
+pred_RF_test2_2000 <- predict(model3, test2)
+#Train
+pred_RF_train2_2000 <- predict(model3, train2)
+
+test2$predicciones_RF_2000 <- exp(pred_RF_test2_2000$predictions)
+View(test2%>%dplyr::select(price,predicciones_XG_2000, predicciones_RF_2000))
+
+#Se crea el error en pesos
+test2 <- test2%>%mutate(error_RF_2000 = (predicciones_RF_2000 - price)/1000000)%>%mutate(fun_error_RF_2000 = ifelse(error_RF_2000 > 0, error_RF_2000^2,ifelse(error_RF_2000<(-40),error_RF_2000^6,error_RF_2000)))
+View(test2%>%dplyr::select(price, predicciones_RF_2000, error_RF_2000, fun_error_RF_2000))
+AVG_2000_rang <- mean(test2$fun_error_RF_2000)
+AVG_2000_rang 
+RMSE_2000_rang <- sqrt(mean(test2$error_RF_2000^2))
+RMSE_2000_rang
+MAE_2000_rang <- mean(abs(test2$error_RF_2000))
+MAE_2000_rang
+hist(test2$error_RF_2000)
+
+quantile(test2$error_RF_2000, probs = seq(0,1,0.01))
+
+#Cantidad de casas que no se compran
+test2%>%mutate(no_compra = ifelse(error_RF_2000<(-40),1,0))%>%count(no_compra)%>%mutate(perc = 100*n/sum(n) )
+
+#Presupuesto de las compras
+test2%>%subset(error_RF_2000>=(-40))%>%summarise(Presup = -sum(error_RF_2000))
+
+
+
+###################################### predicción con regresión lineal y EN
+
+
+
+df <- model.matrix(~. -1, test) %>%data.frame()
+df2 <- model.matrix(~. -1, train) %>%data.frame()
+
+#Como el modelo se corre con las variables escaladas, deben escalarse también
+
+variables_numericas <- c("bedrooms","mean_H_NRO_CUARTOS2","med_H_NRO_CUARTOS2",
+                         "sum_HA_TOT_PER2","med_V_TOT_HOG2","Final_Bathrooms_2","new_surface_def",  
+                         "bank_d","bus_station_d","casino_d","childcare_d","cinema_d", 
+                         "clinic_d","college_d",
+                         "community_centre_d","conference_centre_d","dentist_d",
+                         "doctors_d","events_d","fast_food_d",
+                         "hospital_d","kindergarten_d","library_d",
+                         "love_hotel_d","marketplace_d","monastery_d",
+                         "parking_d","police_d","restaurant_d",
+                         "bank","bus_station","casino",
+                         "childcare","cinema","clinic",
+                         "college","community_centre","conference_centre",
+                         "dentist","doctors","events_venue",
+                         "fast_food","hospital","kindergarten",
+                         "library","love_hotel","marketplace",
+                         "monastery","parking","police", "restaurant",
+                         "dist_cbd1", "dist_cbd2" )
+
+escalador <- preProcess(df[, variables_numericas])
+escalador2 <- preProcess(df2[, variables_numericas])
+
+test_s <- df
+test_s[, variables_numericas] <- predict(escalador, df[, variables_numericas])
+train_s <- df2
+train_s[, variables_numericas] <- predict(escalador, df2[, variables_numericas])
+
+y_train <- train$log_price
+
+train_en <- data.frame(y_train, train_s)
+
+
+#############################No me esta dejando predecir el EN, volveré a entrenarlo
+# crear K-Fold particiones sobre la base para ajustar los modelos
+set.seed(100)
+cv5 <- trainControl(number = 5,
+                    method = "cv")
+
+# crear grid_search para elastic net
+tunegrid_glmnet <- data.frame(alpha= seq(0,1,length.out=10),
+                              lambda = seq(0,1,length.out=50) )
+
+# crear modelo de Elastic Net
+# hiper parametros: method: glmnet, preProcess centrar y escalar
+# trainControl: CV-5Fold, metric optimizar: RMSE, tuneGri
+
+modelo_glmnet <- train(y_train~ property_typeCasa +police + parking + cinema_d+Final_Bathrooms_2+ mod_VA1_ESTRATO26+ cinema+ marketplace+ kindergarten + mod_VA1_ESTRATO23 ,
+                       data = train_en,
+                       method = "glmnet",
+                       trControl= cv5,
+                       metric = 'RMSE',
+                       tuneGrid = tunegrid_glmnet)
+# preProcess = c("center", "scale"),
+modelo_glmnet
+
+# plot del modelo 
+plot(modelo_glmnet)
+glmnet_opt <- modelo_glmnet$bestTune
+
+
+####################Se entrena el modelo con los hiperparámetros óptimos
+set.seed(100)
+cv5 <- trainControl(number = 5,
+                    method = "cv")
+
+a <- glmnet_opt$alpha
+l <- glmnet_opt$lambda
+# crear grid_search para elastic net
+tunegrid_glmnet <- data.frame(alpha= a,
+                              lambda = l )
+
+# crear modelo de Elastic Net
+# hiper parametros: method: glmnet, preProcess centrar y escalar
+# trainControl: CV-5Fold, metric optimizar: RMSE, tuneGri
+
+modelo_glmnet <- train(y_train~ property_typeCasa +police + parking + cinema_d+Final_Bathrooms_2+ mod_VA1_ESTRATO26+ cinema+ marketplace+ kindergarten + mod_VA1_ESTRATO23 ,
+                       data = train_en,
+                       method = "glmnet",
+                       trControl= cv5,
+                       metric = 'RMSE',
+                       tuneGrid = tunegrid_glmnet)
+
+
+
+
+#########################################Predicción reg lineal
+#Test
+pred_lm_test2 <- predict(model_lm, test_s)
+
+
+test2$predicciones_lm <- exp(pred_lm_test2)
+View(test2%>%dplyr::select(price, predicciones_lm))
+
+#Se crea el error en pesos
+test2 <- test2%>%mutate(error_lm = (predicciones_lm - price)/1000000)%>%mutate(fun_error_lm = ifelse(error_lm > 0, error_lm^2,ifelse(error_lm<(-40),error_lm^6,error_lm)))
+View(test2%>%dplyr::select(price, predicciones_lm, error_lm, fun_error_lm))
+AVG_lm <- mean(test2$fun_error_lm)
+AVG_lm 
+RMSE_lm <- sqrt(mean(test2$error_lm^2))
+RMSE_lm
+MAE_lm <- mean(abs(test2$error_lm))
+MAE_lm
+hist(test2$error_lm)
+
+quantile(test2$error_lm, probs = seq(0,1,0.01))
+
+#Cantidad de casas que no se compran
+test2%>%mutate(no_compra = ifelse(error_lm<(-40),1,0))%>%count(no_compra)%>%mutate(perc = 100*n/sum(n) )
+
+#Presupuesto de las compras
+test2%>%subset(error_lm>=(-40))%>%summarise(Presup = -sum(error_lm))
+
+
+#########################################Predicción EN
+#Test
+pred_EN_test2 <-  predict(modelo_glmnet, test_s)
+
+
+test2$predicciones_EN <- exp(pred_EN_test2)
+View(test2%>%dplyr::select(price, predicciones_EN))
+
+#Se crea el error en pesos
+test2 <- test2%>%mutate(error_EN = (predicciones_EN - price)/1000000)%>%mutate(fun_error_EN = ifelse(error_EN > 0, error_EN^2,ifelse(error_EN<(-40),error_EN^6,error_EN)))
+View(test2%>%dplyr::select(price, predicciones_EN, error_EN, fun_error_EN))
+AVG_EN <- mean(test2$fun_error_EN)
+AVG_EN 
+RMSE_EN <- sqrt(mean(test2$error_EN^2))
+RMSE_EN
+MAE_EN <- mean(abs(test2$error_EN))
+MAE_EN
+hist(test2$error_EN)
+
+quantile(test2$error_EN, probs = seq(0,1,0.01))
+
+#Cantidad de casas que no se compran
+test2%>%mutate(no_compra = ifelse(error_EN<(-40),1,0))%>%count(no_compra)%>%mutate(perc = 100*n/sum(n) )
+
+#Presupuesto de las compras
+test2%>%subset(error_EN>=(-40))%>%summarise(Presup = -sum(error_EN))
 
 
 #Toca quitar lo de los nucleos al final
@@ -492,6 +806,74 @@ stopCluster(cl)
 
 
 
+View(test2%>%dplyr::select(price, predicciones_XG_custom, error_XG_custom, fun_error_XG_custom))
+
+######################################Una última cosa  (No me gustó como quedó)
+#Para evitar que cuando nos pasemos sea por mucho, 
+#vamos a normalizar el logaritmo del precio predicho
+#Eso va a comprimir un poco los datos con precios más altos
+
+#Este es el dato original
+hist(test2$log_price)
+#Este es el dato predicho con el mejor modelo
+hist(pred_xgb_test2_custom)
+hist(exp(pred_xgb_test2_custom))
+
+#Promedio y desviación original
+media <- mean(log(base$price))
+mean(pred_xgb_test2_custom)
+
+#Desviación
+sd <- sd(log(base$price))
+sd(pred_xgb_test2_custom)
+
+predicciones_normalizadas <- (pred_xgb_test2_custom-media)/sd + media
+predicciones_normalizadas%>%head()
+
+pred_xgb_test2_custom%>%head()
+
+hist(predicciones_normalizadas)
+hist(exp(predicciones_normalizadas))
+
+#Cómo es la distribución de los precios?
+quantile(base$price, prob = seq(0,1,0.01))
+quantile(test2$predicciones_XG_custom, prob = seq(0,1,0.01))
+
+#En el último percentil
+quantile(base$price, prob = seq(0.99,1,0.001))
+quantile(test2$predicciones_XG_custom, prob = seq(0.99,1,0.001))
+
+#Menos del 4% de los aptos vale más de 2.500 millones, la mayoría de esos no los compramos porque nos vamos por debajo
+#Pero más grave aún, en algunos predecimos precios muy altos y eso nos está dañando el presupuesto
+#Podemos ver qué pasa si truncamos esos datos y no ofertamos nunca más de 2.500 millones
+
+
+##########################################predict (Customized)
+
+test2 <- test2%>%mutate(pred_trunc = ifelse(predicciones_XG_custom>2500000000,2500000000, predicciones_XG_custom) )
+
+#Se crea el error en pesos
+test2 <- test2%>%mutate(error_pred_trunc = (pred_trunc - price)/1000000)%>%mutate(fun_error_pred_trunc = ifelse(error_pred_trunc > 0, error_pred_trunc^2,ifelse(error_pred_trunc<(-40),error_pred_trunc^6,error_pred_trunc)))
+View(test2%>%dplyr::select(price, pred_trunc, error_pred_trunc, fun_error_pred_trunc))
+AVG_trunc <- mean(test2$fun_error_pred_trunc)
+AVG_trunc 
+RMSE_trunc <- sqrt(mean(test2$error_pred_trunc^2))
+RMSE_trunc
+MAE_trunc <- mean(abs(test2$error_pred_trunc))
+MAE_trunc
+hist(test2$error_pred_trunc)
+
+quantile(test2$error_pred_trunc, probs = seq(0,1,0.01))
+
+#Cantidad de casas que no se compran
+test2%>%mutate(no_compra = ifelse(error_pred_trunc<(-40),1,0))%>%count(no_compra)%>%mutate(perc = 100*n/sum(n) )
+
+#Presupuesto de las compras
+test2%>%subset(error_pred_trunc>=(-40))%>%summarise(Presup = -sum(error_pred_trunc))
+
+
+
+#######################################Exportar los resultados en el test
 
 #Cargar el test definitivo
 test_def <- read_rds("test_final.rds")
@@ -539,5 +921,43 @@ test_def$predictions_RF200 <- exp(predict_test_def_200RF$predictions)
 predict_test_def_XGcustom <- predict(mod_xgb_custom, test_def)
 test_def$predictions_XGcustom <- exp(predict_test_def_XGcustom)
 
+#Predicción XGboost personalizado (2da versión)
+predict_test_def_XGcustom2 <- predict(mod_xgb_custom2, test_def)
+test_def$predictions_XGcustom2 <- exp(predict_test_def_XGcustom2)
+
+
+hist(train$log_price)
+hist(train2$price)
+hist(log(base$price))
+
 #GUARDAR LA BASE
 write_rds(test_def, "Test_con_predicciones.rds")
+
+
+############################Histograma de los errores del mejor modelo
+
+ggplot(df, aes(x=test2$error_XG_custom))+
+  geom_histogram(color="darkblue", fill="lightblue", bins = 200, alpha = 1)+
+  theme_classic()+
+  xlab("Error (millones de pesos)")+
+  ylab("Frecuencia")
+
+#Agrupa aproximadamente el 97% de los datos
+
+ggplot(df, aes(x=test2$error_XG_custom))+
+  geom_histogram(color="darkblue", fill="lightblue", bins = 200, alpha = 1)+
+  theme_classic()+
+  geom_vline(xintercept = -40, linetype="dotted", color = "red", size=1)+
+  geom_vline(xintercept = 40, linetype="dotted", color = "red", size=1)+
+  geom_vline(xintercept = 0, linetype="dotted", color = "black", size=1)+
+  xlab("Error (millones de pesos)")+
+  ylab("Frecuencia")+
+  ggtitle("Distribución del error de predicción en millones de pesos")+
+  xlim(-1000,800)+
+  theme(text = element_text(size = 16), plot.title = element_text(size = 20, hjust = 0.5))
+
+quantile(test2$error_XG_custom, probs = seq(0,1,0.005))
+#poquito menos del 34% y desde el 63% (O sea el 29% está en nuestro rango ideal) 
+#29% en lo que queremos tener
+#34% no se cierran (se subestiman por más de 40 millones)
+#37% se sobre estiman por más de 40 millones.
