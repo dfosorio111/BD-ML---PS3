@@ -9,7 +9,6 @@ install.packages("pacman")
 
 require("pacman") 
 
-
 ## llamar y/o instalar librerias
 p_load(tidyverse,rio,skimr,viridis,
        dplyr,
@@ -43,10 +42,10 @@ p_load(tidyverse,rio,glue,
        stringi,tidytext,stopwords, ## text-data
        tidymodels,finetune)
 
-p_load(tidyverse, SuperLearner, caret, glmnet, randomForest, RhpcBLASctl, MLmetrics)
+p_load(simstudy, tidyverse, SuperLearner, caret, glmnet, randomForest, RhpcBLASctl, MLmetrics)
 
 # establecer directorio
-setwd('C:/Users/df.osorio11/Documents/diego')
+setwd('C:/Users/Diego/OneDrive/Documents/GitHub/BD-ML---PS3/scripts/diego')
 
 
 # CARGAR TRAIN COMPLETA FINAL (original, censo, amenities)
@@ -55,6 +54,8 @@ train_completa <- readRDS('data/train_final.RDS')
 # hacer prueba (sample) de la base de train
 train <- sample_n(train_completa,500)
 
+# cargar datos completos
+train <- train_completa
 
 # CARGAR TRAIN COMPLETA FINAL (original, censo, amenities)
 test_completa <- readRDS('data/test_final.RDS')
@@ -62,10 +63,11 @@ test_completa <- readRDS('data/test_final.RDS')
 # hacer prueba (sample) de la base de train (PARA HACER PREDICCIONES CON EL MEJOR MODELO)
 test <- sample_n(test_completa,100)
 
+# cargar datos completos
+test <- test_completa
 
 # quitar city (?)
 #test <- merge(test_original_censo, test_amenities, by = 'property_id')
-
 
 # crear variable del logaritmo del precio de las casas
 train$log_price <- log(train$price)
@@ -340,5 +342,50 @@ cv_sl <- CV.SuperLearner(Y= y_train, X = X_train_scaled,
                                         "SL.lm"),
                          control = list(saveFitLibrary = TRUE))
 summary(cv_sl)
+
+
+
+
+# set the seed for reproducibility
+set.seed(123)
+
+
+#datos simulados, distancia al DBD
+ddef <- defData(varname = "dcbd", formula = "0;1", dist = "uniform")
+
+theta1 <- c(0.9, 0.01, 0.5, 0.8, 0.6, 0.3, 0.8)
+knots <- c(0.25, 0.5, 0.75)
+
+dt <- genData(1000, ddef)
+
+dt <- genSpline(
+  dt = dt, newvar = "price",
+  predictor = "dcbd", theta = theta1,
+  knots = knots, degree = 3,
+  noise.var = .025
+)
+
+dt<- dt %>% mutate(price=100000+price*10000)
+
+
+ggplot(data=dt) +
+  geom_point(aes(y=price,x=dcbd),shape=21,size=1.5) +
+  xlab("Distancia al Centro (en millas)") +
+  ylab("Precio en US$") +
+  theme_bw() +
+  theme(text=element_text(size=20))
+
+# crear modelos de RF
+SL.forest1 <- create.Learner("SL.randomForest", list(ntree = 1000))
+SL.forest2 <- create.Learner("SL.randomForest", list(ntree = 100))
+
+# Un SL que tiene 2 bosques, uno con 10000 arboles, otro con 100 arboles, y una regresion lineal
+sl.lib <- c(SL.forest1$names,SL.forest2$names,"SL.lm")
+
+
+fitY <- SuperLearner(Y = y, X = data.frame(x),
+                     method = "method.NNLS", SL.library = sl.lib)
+
+fitY
 
 
