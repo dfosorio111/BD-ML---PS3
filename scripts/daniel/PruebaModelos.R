@@ -10,6 +10,10 @@ p_load(tidyverse,rio,glue,
        stringi,tidytext,stopwords, ## text-data
        tidymodels,finetune) 
 
+#Directorio Daniel
+setwd("C:/Users/danie/OneDrive/Escritorio/Uniandes/PEG/Big Data and Machine Learning/BD-ML---PS3/data")
+
+
 #importar la base del train
 probando <- read_rds("BASE_CENSO_ORIGINALES_REGEX_reducida.rds")
 
@@ -31,8 +35,8 @@ test2 <- probando[-train_ind, ]%>%head(100)
 
 keep <- c("property_id", "price", "bedrooms", "property_type",
           "mean_H_NRO_CUARTOS2", "med_H_NRO_CUARTOS2", "sum_HA_TOT_PER2", 
-          "med_V_TOT_HOG2", "mod_VA1_ESTRATO2", "mod_V_MAT_PARED2", "mod_V_MAT_PISO2",
-          "mod_VE_RECBAS2", "Final_Bathrooms_2", "new_surface_def")
+          "med_V_TOT_HOG2", "mod_VA1_ESTRATO2", "mod_V_MAT_PISO2",
+          "Final_Bathrooms_2", "new_surface_def")
 
 train <- train[,(names(train) %in% keep)]
 test2 <- test2[,(names(test2) %in% keep)]
@@ -40,9 +44,11 @@ test2 <- test2[,(names(test2) %in% keep)]
 #Convertir en factores las variables categóricas
 train$property_type <- as.factor(train$property_type)
 train$mod_VA1_ESTRATO2 <- as.factor(train$mod_VA1_ESTRATO2)
-train$mod_V_MAT_PARED2 <- as.factor(train$mod_V_MAT_PARED2)
-train$mod_V_MAT_PISO2 <- as.factor(train$mod_V_MAT_PISO2)
-train$mod_VE_RECBAS2 <- as.factor(train$mod_VE_RECBAS2)
+#train$mod_V_MAT_PARED2 <- as.factor(train$mod_V_MAT_PARED2)
+#train$mod_V_MAT_PISO2 <- as.factor(train$mod_V_MAT_PISO2)
+#train$mod_VE_RECBAS2 <- as.factor(train$mod_VE_RECBAS2)
+
+#train%>%count(mod_V_MAT_PARED2)
 
 
 ## set n-folds
@@ -51,9 +57,10 @@ db_folds <- vfold_cv(data=train, v=5 , strata=price)
 db_folds
 
 
-db_recipe <- recipe(formula=price ~ bedrooms + Final_Bathrooms_2 + new_surface_def , data=train) %>% ## En recip se detallan los pasos que se aplicarán a un conjunto de datos para prepararlo para el análisis de datos.
-  update_role(property_id, new_role = "id")## cambiar role para variable id
-  
+db_recipe <- recipe(formula=price ~ . , data=train) %>% ## En recip se detallan los pasos que se aplicarán a un conjunto de datos para prepararlo para el análisis de datos.
+  update_role(property_id, new_role = "id") %>%## cambiar role para variable id
+  step_dummy(all_nominal_predictors()) %>%
+  step_nzv(all_predictors())
 db_recipe
 
 
@@ -95,3 +102,6 @@ plot_race(xgb_word_rs)
 
 ## best model
 show_best(xgb_word_rs)
+
+
+test <- read_rds("TEST_BASE_CENSO_ORIGINALES_REGEX.rds")
