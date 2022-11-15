@@ -27,7 +27,8 @@ p_load(tidyverse, rvest, data.table, dplyr, skimr, caret, rio,
        modelsummary, # tidy, msummary
        gamlr,        # cv.gamlr
        ROCR, # ROC curve
-       class, glmnet, janitor, doParallel, rattle, fastDummies, tidymodels, themis, AER, randomForest,xgboost, ranger)
+       class, glmnet, janitor, doParallel, rattle, fastDummies, tidymodels, themis, AER, randomForest,xgboost, ranger,
+       spatialsample)
 
 
 
@@ -266,7 +267,7 @@ custom_summary <- function(data, lev = NULL, model = NULL){
 
 ####Se usa un control que incorpore la métrica
 ctrl <- trainControl(method = "cv",  
-                     number = 2,     
+                     number = 5,     
                      summaryFunction = custom_summary)
 
 #Se construye la grilla
@@ -295,6 +296,80 @@ xgboost <- train(
 write_rds(xgboost, "modelo_xgboost_custom.rds")
 
 
+#####################################################Modelo con métrica personalizada y espacial
+
+
+#Se construye la métrica personalizada
+custom_summary <- function(data, lev = NULL, model = NULL){
+  out = mean(ifelse((exp(data[, "pred"])-exp(data[, "obs"]))/1000000 > 0, (exp(data[, "pred"])-exp(data[, "obs"]))^2, 
+                    ifelse((exp(data[, "pred"])-exp(data[, "obs"]))/1000000 < (-40) ,(exp(data[, "pred"])-exp(data[, "obs"]))^6 ,(exp(data[, "pred"])-exp(data[, "obs"])))) ) 
+  names(out) = c("anti_fiasco")
+  out
+}
+
+base_original <- readRDS("train_final.rds")
+
+
+base_original_sf <- st_as_sf(base_original)
+
+base_original_sf_med <- base_original_sf%>%subset(city == "Medellín")
+
+mini_med <- base_original_sf_med[1:500,]
+
+
+class(mini_train_sf)
+
+block_folds <- spatial_block_cv(mini_med, v = 5)
+autoplot(block_folds)
+
+
+drop2 <- c("city", "operation_type", "geometry", 
+           "mod_V_MAT_PARED2", "mod_V_MAT_PISO2", "mod_VE_RECBAS2")
+
+mini_med <- mini_med[,(!names(train) %in% drop2)]
+
+
+
+drop <- c("city", "operation_type", "geometry", 
+          "mod_V_MAT_PARED2", "mod_V_MAT_PISO2", "mod_VE_RECBAS2", "price",
+          "property_id")
+
+mini_med <- mini_med[,(!names(train) %in% drop)]
+
+
+
+####Se usa un control que incorpore la métrica
+ctrl <- trainControl(method = "cv",  
+                     number = 5,     
+                     summaryFunction = custom_summary)
+
+#Se construye la grilla
+grid_default <- expand.grid(nrounds = c(2000),
+                            max_depth = c(5, 10),
+                            eta = c(0.01, 0.05),
+                            gamma = c(0,1),
+                            min_child_weight = c(50,100),
+                            colsample_bytree = c(0.7),
+                            subsample = c(0.6))
+
+#Se corre el modelo
+#modelo
+set.seed(1410)
+xgboost <- train(
+  log_price ~ . ,
+  data = train,
+  method = "xgbTree",
+  trControl = block_folds,
+  metric = "RMSE",
+  tuneGrid = grid_default,
+  preProcess = c("center", "scale"),
+  maximize = FALSE
+)
+
+write_rds(xgboost, "modelo_xgboost_custom.rds")
+
+
+
 #####################################################Modelo con métrica personalizada (2da versión)
 
 
@@ -308,7 +383,7 @@ custom_summary <- function(data, lev = NULL, model = NULL){
 
 ####Se usa un control que incorpore la métrica
 ctrl <- trainControl(method = "cv",  
-                     number = 2,     
+                     number = 5,     
                      summaryFunction = custom_summary)
 
 #Se construye la grilla
@@ -417,7 +492,7 @@ test2%>%subset(error_XG_1500>=(-40))%>%summarise(Presup = -sum(error_XG_1500))
 mod_xgboost_2000 <- read_rds("XGB_2000.rds")
 
 write_rds(xgboost, "modelo_xgboost_con_3000.rds")
-mod_xgboost <- read_rds("modelo_xgboost_con_3000.rds")
+mod_xgboost_3000 <- read_rds("modelo_xgboost_con_3000.rds")
 
 ##########################################predict (con 2000 árboles)
 
@@ -447,6 +522,38 @@ test2%>%mutate(no_compra = ifelse(error_XG_2000<(-40),1,0))%>%count(no_compra)%>
 
 #Presupuesto de las compras
 test2%>%subset(error_XG_2000>=(-40))%>%summarise(Presup = -sum(error_XG_2000))
+
+
+##########################################predict (con 3000 árboles)
+
+#Test
+pred_xgb_test2_3000 <- predict(mod_xgboost_3000, test2)
+#Train
+pred_xgb_train2_3000 <- predict(mod_xgboost_3000, train2)
+
+test2$predicciones_XG_3000 <- exp(pred_xgb_test2_3000)
+View(test2%>%dplyr::select(price, predicciones_XG_1000 ,predicciones_XG_3000))
+
+#Se crea el error en pesos
+test2 <- test2%>%mutate(error_XG_3000 = (predicciones_XG_3000 - price)/1000000)%>%mutate(fun_error_XG_3000 = ifelse(error_XG_3000 > 0, error_XG_3000^2,ifelse(error_XG_3000<(-40),error_XG_3000^6,error_XG_3000)))
+View(test2%>%dplyr::select(price, predicciones_XG_3000, error_XG_3000, fun_error_XG_3000))
+AVG_3000 <- mean(test2$fun_error_XG_3000)
+AVG_3000 
+RMSE_3000 <- sqrt(mean(test2$error_XG_3000^2))
+RMSE_3000
+MAE_3000 <- mean(abs(test2$error_XG_3000))
+MAE_3000
+hist(test2$error_XG_3000)
+
+quantile(test2$error_XG_3000, probs = seq(0,1,0.01))
+
+#Cantidad de casas que no se compran
+test2%>%mutate(no_compra = ifelse(error_XG_3000<(-40),1,0))%>%count(no_compra)%>%mutate(perc = 100*n/sum(n) )
+
+#Presupuesto de las compras
+test2%>%subset(error_XG_3000>=(-40))%>%summarise(Presup = -sum(error_XG_3000))
+
+
 
 #Cargar el modelo con error personalizado
 mod_xgb_custom <- read_rds("modelo_xgboost_custom.rds")
@@ -481,6 +588,8 @@ test2%>%mutate(no_compra = ifelse(error_XG_custom<(-40),1,0))%>%count(no_compra)
 
 #Presupuesto de las compras
 test2%>%subset(error_XG_custom>=(-40))%>%summarise(Presup = -sum(error_XG_custom))
+
+test2%>%summarise(Presup = -sum(error_XG_custom))
 
 #Cargar el modelo con error personalizado
 mod_xgb_custom2 <- read_rds("modelo_xgboost_custom2.rds")
@@ -710,8 +819,9 @@ modelo_glmnet <- train(y_train~ property_typeCasa +police + parking + cinema_d+F
                        data = train_en,
                        method = "glmnet",
                        trControl= cv5,
-                       metric = 'RMSE',
+                       metric = 'anti_fiasco',
                        tuneGrid = tunegrid_glmnet)
+
 # preProcess = c("center", "scale"),
 modelo_glmnet
 
@@ -723,7 +833,8 @@ glmnet_opt <- modelo_glmnet$bestTune
 ####################Se entrena el modelo con los hiperparámetros óptimos
 set.seed(100)
 cv5 <- trainControl(number = 5,
-                    method = "cv")
+                    method = "cv",
+                    summaryFunction = custom_summary)
 
 a <- glmnet_opt$alpha
 l <- glmnet_opt$lambda
@@ -739,9 +850,106 @@ modelo_glmnet <- train(y_train~ property_typeCasa +police + parking + cinema_d+F
                        data = train_en,
                        method = "glmnet",
                        trControl= cv5,
-                       metric = 'RMSE',
+                       metric = 'anti_fiasco',
                        tuneGrid = tunegrid_glmnet)
 
+
+#####################################Modelo de Ridge
+# crear K-Fold particiones sobre la base para ajustar los modelos
+set.seed(100)
+cv5 <- trainControl(number = 5,
+                    method = "cv")
+
+# crear grid_search para lasso
+tunegrid_ridge <- data.frame(alpha= 0,
+                              lambda = seq(0.01,1,length.out=50) )
+
+modelo_ridge <- train(y_train~ property_typeCasa +police + parking + cinema_d+Final_Bathrooms_2+ mod_VA1_ESTRATO26+ cinema+ marketplace+ kindergarten + mod_VA1_ESTRATO23 ,
+                       data = train_en,
+                       method = "glmnet",
+                       trControl= cv5,
+                       metric = 'RMSE',
+                       tuneGrid = tunegrid_ridge)
+
+# preProcess = c("center", "scale"),
+modelo_ridge
+
+# plot del modelo 
+plot(modelo_ridge)
+ridge_opt <- modelo_ridge$bestTune
+ridge_opt
+
+
+####################Se entrena el modelo con los hiperparámetros óptimos
+set.seed(100)
+cv5 <- trainControl(number = 5,
+                    method = "cv")
+
+a <- ridge_opt$alpha
+l <- ridge_opt$lambda
+# crear grid_search para elastic net
+tunegrid_ridge <- data.frame(alpha= a,
+                              lambda = l )
+
+# crear modelo de Elastic Net
+# hiper parametros: method: glmnet, preProcess centrar y escalar
+# trainControl: CV-5Fold, metric optimizar: RMSE, tuneGri
+
+modelo_ridge <- train(y_train~ property_typeCasa +police + parking + cinema_d+Final_Bathrooms_2+ mod_VA1_ESTRATO26+ cinema+ marketplace+ kindergarten + mod_VA1_ESTRATO23 ,
+                       data = train_en,
+                       method = "glmnet",
+                       trControl= cv5,
+                       metric = 'RMSE',
+                       tuneGrid = tunegrid_ridge)
+
+
+#####################################Modelo de Lasso
+# crear K-Fold particiones sobre la base para ajustar los modelos
+set.seed(100)
+cv5 <- trainControl(number = 5,
+                    method = "cv")
+
+# crear grid_search para lasso
+tunegrid_lasso <- data.frame(alpha= 1,
+                             lambda = seq(0,1,length.out=50) )
+
+modelo_lasso <- train(y_train~ property_typeCasa +police + parking + cinema_d+Final_Bathrooms_2+ mod_VA1_ESTRATO26+ cinema+ marketplace+ kindergarten + mod_VA1_ESTRATO23 ,
+                      data = train_en,
+                      method = "glmnet",
+                      trControl= cv5,
+                      metric = 'RMSE',
+                      tuneGrid = tunegrid_lasso)
+
+# preProcess = c("center", "scale"),
+modelo_lasso
+
+# plot del modelo 
+plot(modelo_lasso)
+lasso_opt <- modelo_lasso$bestTune
+lasso_opt
+
+
+####################Se entrena el modelo con los hiperparámetros óptimos
+set.seed(100)
+cv5 <- trainControl(number = 5,
+                    method = "cv")
+
+a <- lasso_opt$alpha
+l <- lasso_opt$lambda
+# crear grid_search para elastic net
+tunegrid_lasso <- data.frame(alpha= a,
+                             lambda = l )
+
+# crear modelo de Elastic Net
+# hiper parametros: method: glmnet, preProcess centrar y escalar
+# trainControl: CV-5Fold, metric optimizar: RMSE, tuneGri
+
+modelo_lasso <- train(y_train~ property_typeCasa +police + parking + cinema_d+Final_Bathrooms_2+ mod_VA1_ESTRATO26+ cinema+ marketplace+ kindergarten + mod_VA1_ESTRATO23 ,
+                      data = train_en,
+                      method = "glmnet",
+                      trControl= cv5,
+                      metric = 'RMSE',
+                      tuneGrid = tunegrid_lasso)
 
 
 
@@ -799,6 +1007,66 @@ test2%>%mutate(no_compra = ifelse(error_EN<(-40),1,0))%>%count(no_compra)%>%muta
 
 #Presupuesto de las compras
 test2%>%subset(error_EN>=(-40))%>%summarise(Presup = -sum(error_EN))
+
+
+#########################################Predicción lasso
+#Test
+pred_l_test2 <-  predict(modelo_lasso, test_s)
+
+
+
+
+test2$predicciones_l <- exp(pred_l_test2)
+View(test2%>%dplyr::select(price, predicciones_l))
+
+#Se crea el error en pesos
+test2 <- test2%>%mutate(error_l = (predicciones_l - price)/1000000)%>%mutate(fun_error_l = ifelse(error_l > 0, error_l^2,ifelse(error_l<(-40),error_l^6,error_l)))
+View(test2%>%dplyr::select(price, predicciones_l, error_l, fun_error_l))
+AVG_l <- mean(test2$fun_error_l)
+AVG_l 
+RMSE_l <- sqrt(mean(test2$error_l^2))
+RMSE_l
+MAE_l <- mean(abs(test2$error_l))
+MAE_l
+hist(test2$error_l)
+
+quantile(test2$error_l, probs = seq(0,1,0.01))
+
+#Cantidad de casas que no se compran
+test2%>%mutate(no_compra = ifelse(error_l<(-40),1,0))%>%count(no_compra)%>%mutate(perc = 100*n/sum(n) )
+
+#Presupuesto de las compras
+test2%>%subset(error_l>=(-40))%>%summarise(Presup = -sum(error_l))
+
+
+
+#########################################Predicción ridge
+#Test
+pred_r_test2 <-  predict(modelo_ridge, test_s)
+
+
+test2$predicciones_r <- exp(pred_r_test2)
+View(test2%>%dplyr::select(price, predicciones_r))
+
+#Se crea el error en pesos
+test2 <- test2%>%mutate(error_r = (predicciones_r - price)/1000000)%>%mutate(fun_error_r = ifelse(error_r > 0, error_r^2,ifelse(error_r<(-40),error_r^6,error_r)))
+View(test2%>%dplyr::select(price, predicciones_r, error_r, fun_error_r))
+AVG_r <- mean(test2$fun_error_r)
+AVG_r 
+RMSE_r <- sqrt(mean(test2$error_r^2))
+RMSE_r
+MAE_r <- mean(abs(test2$error_r))
+MAE_r
+hist(test2$error_r)
+
+quantile(test2$error_r, probs = seq(0,1,0.01))
+
+#Cantidad de casas que no se compran
+test2%>%mutate(no_compra = ifelse(error_r<(-40),1,0))%>%count(no_compra)%>%mutate(perc = 100*n/sum(n) )
+
+#Presupuesto de las compras
+test2%>%subset(error_r>=(-40))%>%summarise(Presup = -sum(error_r))
+
 
 
 #Toca quitar lo de los nucleos al final
@@ -944,7 +1212,7 @@ ggplot(df, aes(x=test2$error_XG_custom))+
 
 #Agrupa aproximadamente el 97% de los datos
 
-ggplot(df, aes(x=test2$error_XG_custom))+
+ggplot(test2, aes(x=error_XG_custom))+
   geom_histogram(color="darkblue", fill="lightblue", bins = 200, alpha = 1)+
   theme_classic()+
   geom_vline(xintercept = -40, linetype="dotted", color = "red", size=1)+
@@ -961,3 +1229,78 @@ quantile(test2$error_XG_custom, probs = seq(0,1,0.005))
 #29% en lo que queremos tener
 #34% no se cierran (se subestiman por más de 40 millones)
 #37% se sobre estiman por más de 40 millones.
+
+
+#Cargar el submission template
+sub_tembp <- read.csv("submission_template.csv")
+
+#Ver las predicciones de Cali cómo están dando
+summary(test_def$predictions_XGcustom)
+mean(test_def$predictions_XGcustom)
+desv <- sd(test_def$predictions_XGcustom)
+
+#Vamos a respetar la desviación de precios que tenemos, mejor no agrandarla
+#Pero si vamos a centrar en la media de Cali
+ggplot(test_def, aes(x=predictions_XGcustom/1000000))+
+  geom_histogram(color="darkblue", fill="lightblue", bins = 200, alpha = 1)+
+  theme_classic()+
+  geom_vline(xintercept = 555.3, linetype="dotted", color = "red", size=1)+
+  geom_vline(xintercept = 837.1, linetype="dotted", color = "black", size=1)+
+  xlab("Error (millones de pesos)")+
+  ylab("Frecuencia")+
+  ggtitle("Distribución del error de predicción en millones de pesos")+
+  theme(text = element_text(size = 16), plot.title = element_text(size = 20, hjust = 0.5))
+
+ponderador = 555314430/mean(test_def$predictions_XGcustom)
+
+test_def <- test_def%>%mutate(predicciones_def = ponderador*predictions_XGcustom)
+mean(test_def$predicciones_def )
+summary(test_def$predicciones_def )
+
+ggplot(test_def, aes(x=predicciones_def/1000000))+
+  geom_histogram(color="darkblue", fill="lightblue", bins = 200, alpha = 1)+
+  theme_classic()+
+  xlab("Error (millones de pesos)")+
+  ylab("Frecuencia")+
+  ggtitle("Distribución del error de predicción en millones de pesos")+
+  theme(text = element_text(size = 16), plot.title = element_text(size = 20, hjust = 0.5))
+
+
+#Gráfico comparativo
+ggplot(test_def, aes(x=predictions_XGcustom/1000000))+
+  geom_histogram(color="darkblue", fill="blue", bins = 200, alpha = 1)+
+  geom_histogram(aes(x=predicciones_def/1000000), color="red", fill="red", bins = 200, alpha = 0.5)+
+  theme_classic()+
+  geom_vline(xintercept = 555.3, linetype="dotted", color = "red", size=1)+
+  geom_vline(xintercept = 837.1, linetype="dotted", color = "blue", size=1)+
+  xlab("Precios predichos en Cali (millones de pesos)")+
+  ylab("Frecuencia")+
+  ggtitle("Distribución del precio predicho en millones de pesos")+
+  theme(text = element_text(size = 16), plot.title = element_text(size = 20, hjust = 0.5))
+
+quantile(test_def$predictions_XGcustom/1000000, probs = seq(0,1,0.05))
+quantile(test_def$predicciones_def/1000000, probs = seq(0,1,0.05))
+
+#Se reemplazan las predicciones definitivas en el submission template
+sub_tembp$price[which(sub_tembp$property_id == test_def$property_id)] <- test_def$predicciones_def[which(sub_tembp$property_id == test_def$property_id)]
+
+#Se guarda y exporta el submission template
+write.csv(sub_tembp, "predictions_franco_malkun_osorio.csv")
+
+
+#Importancia de las variables
+variable_importance <- varImp(mod_xgb_custom)
+
+V = caret::varImp(mod_xgb_custom)
+
+plot(V, main = "Importancia de las variables", xlab = "Importancia", ylab = "variable")
+
+V = V$importance[1:10,]
+
+ggplot(
+  V,
+  mapping = NULL,
+  top = dim(V$importance)[1],
+  environment = NULL, fill = "blue"
+)
+

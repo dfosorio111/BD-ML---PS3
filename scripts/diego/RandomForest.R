@@ -46,6 +46,7 @@ p_load(simstudy, tidyverse, SuperLearner, caret, glmnet, randomForest, RhpcBLASc
 # establecer directorio
 setwd('C:/Users/Diego/OneDrive/Documents/GitHub/BD-ML---PS3/scripts/diego')
 
+
 # CARGAR TRAIN COMPLETA FINAL (original, censo, amenities)
 train_completa <- readRDS('data/train_final.RDS')
 
@@ -188,24 +189,25 @@ val_modelos <- data.frame(y_val, val_s)
 test_modelos <- data.frame(y_test, test_s)
 
 # Random Forest
-tunegrid_rf <- data.frame(min.node.size= c(1,3,5,7,9,15),
-                          mtry = ceiling(7),
+tunegrid_rf <- data.frame(min.node.size= c(20,50),
+                          mtry = c(7,10),
                           splitrule = "variance")
 #splitrule = "gini")
 
 # crear K-Fold particiones sobre la base para ajustar los modelos
 set.seed(100)
 cv5 <- trainControl(number = 5,
-                    method = "cv")
+                    method = "cv", 
+                    summaryFunction = custom_summary)
 #summaryFunction: CUSTOM FUNCTION del Error
 
 # ajustar modelo de Rando Forest
 # hiper parametros: metodo= ranger, trainControl=CV, metrica opt = 'RMSE'
-modelo_rf <- train(y_train~. -1,
-                   data = train_modelos,
+modelo_rf <- train(log_price~. -1,
+                   data = train,
                    method = "ranger",
                    trControl= cv5,
-                   metric = 'RMSE',
+                   metric = "anti_fiasco",
                    tuneGrid = tunegrid_rf)
 
 # hiper parametros de modelo optimo
