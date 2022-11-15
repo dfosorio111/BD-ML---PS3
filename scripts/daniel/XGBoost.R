@@ -1287,6 +1287,31 @@ sub_tembp$price[which(sub_tembp$property_id == test_def$property_id)] <- test_de
 #Se guarda y exporta el submission template
 write.csv(sub_tembp, "predictions_franco_malkun_osorio.csv")
 
+resultados <- read.csv("predictions_franco_malkun_osorio.csv")
+
+resultados <- resultados[,2:3]
+
+write.csv(resultados, "predictions_franco_malkun_osorio.csv", row.names = FALSE)
+
+
+ggplot(resultados, aes(x=price/1000000))+
+  geom_histogram(color="darkblue", fill="lightblue", bins = 200, alpha = 1)+
+  theme_classic()+
+  geom_vline(xintercept = 555.3, linetype="dotted", color = "red", size=1)+
+  geom_vline(xintercept = 837.1, linetype="dotted", color = "black", size=1)+
+  xlab("Error (millones de pesos)")+
+  ylab("Frecuencia")+
+  xlim(0,5000)+
+  ggtitle("Distribución del error de predicción en millones de pesos")+
+  theme(text = element_text(size = 16), plot.title = element_text(size = 20, hjust = 0.5))
+
+mean(resultados$price)
+sd(resultados$price)
+
+mean(base$price)
+sd(base$price)
+
+sum(is.na(resultados$price))
 
 #Importancia de las variables
 variable_importance <- varImp(mod_xgb_custom)
@@ -1303,4 +1328,16 @@ ggplot(
   top = dim(V$importance)[1],
   environment = NULL, fill = "blue"
 )
+
+
+ggplot(base, aes(x=price/1000000))+
+  geom_histogram(color="darkblue", fill="lightblue", bins = 200, alpha = 1)+
+  theme_classic()+
+  geom_vline(xintercept = 555.3, linetype="dotted", color = "red", size=1)+
+  geom_vline(xintercept = 837.1, linetype="dotted", color = "black", size=1)+
+  xlab("Error (millones de pesos)")+
+  ylab("Frecuencia")+
+  xlim(0,5000)+
+  ggtitle("Distribución del error de predicción en millones de pesos")+
+  theme(text = element_text(size = 16), plot.title = element_text(size = 20, hjust = 0.5))
 
