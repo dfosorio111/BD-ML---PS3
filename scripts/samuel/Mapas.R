@@ -15,6 +15,8 @@ p_load(tidyverse,rio,skimr,viridis,
 train <- read_rds("~/Desktop/Big Data/Repositorios/BD-ML---PS3/data/train_final.RDS")
 test <- read_rds("~/Desktop/Big Data/Repositorios/BD-ML---PS3/data/test_final.RDS")
 
+precios <- read_rds("~/Desktop/Big Data/Repositorios/BD-ML---PS3/data/Test_con_predicciones.RDS")
+
 ## crear la caja de coordenada que contiene el polígono de Cali
 cali <- opq(bbox = getbb("Cali Colombia"))
 
@@ -36,7 +38,7 @@ bog_sf <- st_as_sf(x = bog_h, crs=4326)
 
 med_sf <- st_as_sf(x = med_h, crs=4326)
 
-cali_sf <- st_as_sf(x = test, crs=4326)
+cali_sf <- st_as_sf(x = precios, crs=4326)
 
 # Precio m2
 
@@ -44,7 +46,7 @@ bog_sf <- bog_sf %>% mutate(pm = (price / new_surface_def)/1000000)
 
 med_sf <- med_sf %>% mutate(pm = (price / new_surface_def)/1000000)
 
-cali_sf <- cali_sf %>% mutate(pm = (price / new_surface_def)/1000000)
+cali_sf <- cali_sf %>% mutate(pm = (predictions_XGcustom2 / new_surface_def)/1000000)
 
 
 ## Info barrios
@@ -160,4 +162,24 @@ ggplot()+
 
 ggsave("mapas/medellin", dpi=300, dev='png', height=7, width=7, units="in")
 
+## Cali
 
+cali_sin <- prom_cali %>% st_set_geometry(NULL)
+
+# Merge Cali
+
+cali_total <- merge(barrios_cali, cali_sin, by = "name")
+
+# Mapa Cali
+
+ggplot()+
+  geom_sf(data=cali_total, aes(fill = promedio)) + theme_bw() +
+  theme(axis.title =element_blank(),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        axis.text = element_text(size=6))+
+  ggtitle("Precio del metro cuadrado según comuna en Cali")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(fill = "Millones de COP")
+
+ggsave("mapas/cali", dpi=300, dev='png', height=7, width=7, units="in")
